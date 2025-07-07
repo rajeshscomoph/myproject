@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:myproject/components/PEC/primary_eye_care_component.dart';
+import 'package:myproject/components/PEC/primary_eye_care_first_page.dart';
 
 class FormPage extends StatefulWidget {
   const FormPage({super.key});
@@ -22,7 +22,8 @@ class _FormPageState extends State<FormPage> {
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
-          child: PrimaryEyeCareComponent(),
+          child: PrimaryEyeCareFirstPage(),
+          
         ),
       ),
     );

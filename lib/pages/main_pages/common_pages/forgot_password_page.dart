@@ -24,7 +24,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     });
 
     try {
-      // TODO: replace with your real API call
+      
       await Future.delayed(const Duration(seconds: 2));
 
       _showDialog('A reset link has been sent if the account exists.');
