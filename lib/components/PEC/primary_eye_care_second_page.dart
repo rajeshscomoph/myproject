@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:myproject/components/dropdown_component.dart';
+import 'package:myproject/components/form_page.dart';
+import 'package:myproject/pages/main_pages/app_specific/form_page.dart'; // import FormPage
 
 class PrimaryEyeCareSecondPage extends StatefulWidget {
   final String selectedPec,
@@ -35,24 +37,41 @@ class PrimaryEyeCareSecondPage extends StatefulWidget {
 class _PrimaryEyeCareSecondPageState extends State<PrimaryEyeCareSecondPage> {
   final _formKey = GlobalKey<FormState>();
 
-  String? _selectedFamilyHis,
-      _selectedDiabeties,
-      _selectedFundusTaken,
-      _selectedGlucomaSusRE,
-      _selectedGlucomaSusLE;
+  // existing variables
+  String? _selectedFamilyHis, _selectedDiabetes, _selectedFundusTaken;
+  String? _selectedGlucomaSusRE, _selectedGlucomaSusLE;
+  String? _vision, _hearing, _walking, _remember, _selfCare, _comCation;
+
   final TextEditingController _iopReController = TextEditingController();
   final TextEditingController _iopLeController = TextEditingController();
   final TextEditingController _fundNotTakenReasController =
       TextEditingController();
 
-  bool get showExtraFields => widget.selectedPec == "PEC-1";
+  // new variables
+  String? _wearGlass, _referred;
+  final TextEditingController _pva1Controller = TextEditingController();
+  final TextEditingController _pva2Controller = TextEditingController();
+  final TextEditingController _pvaNearController = TextEditingController();
+  final TextEditingController _diagnosisCodeController =
+      TextEditingController();
+  final TextEditingController _otherMController = TextEditingController();
+  final TextEditingController _clinicController = TextEditingController();
 
+  final List<String> difficultyLevels = [
+    '1\tNo difficulty',
+    '2\tSome difficulty',
+    '3\tA lot of difficulty',
+    '4\tCannot do at all',
+  ];
+
+  bool get showExtraFields => widget.selectedPec == "PEC-1";
   bool get showIOPFields {
     final age = int.tryParse(widget.age) ?? 0;
     return _selectedFamilyHis == "Yes" || age >= 40;
   }
 
-  bool get showFundusTaken {
+  bool get showFundusFields {
+    if (!showIOPFields) return false;
     final iopRe = int.tryParse(_iopReController.text) ?? 0;
     final iopLe = int.tryParse(_iopLeController.text) ?? 0;
     return iopRe >= 25 || iopLe >= 25;
@@ -60,17 +79,31 @@ class _PrimaryEyeCareSecondPageState extends State<PrimaryEyeCareSecondPage> {
 
   bool get showFundNotTakenReason =>
       _selectedFundusTaken != null && _selectedFundusTaken != "Yes";
-
-  // 👉 NEW CONDITION
   bool get showGlucomaSusFields =>
       widget.selectedPec == "PEC-1" && _selectedFundusTaken == "Yes";
+  bool get showNewOnlyFields => widget.selectedNo == "New";
+
+  @override
+  void dispose() {
+    _iopReController.dispose();
+    _iopLeController.dispose();
+    _fundNotTakenReasController.dispose();
+    _pva1Controller.dispose();
+    _pva2Controller.dispose();
+    _pvaNearController.dispose();
+    _diagnosisCodeController.dispose();
+    _otherMController.dispose();
+    _clinicController.dispose();
+    super.dispose();
+  }
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
-      String summary =
+      final summary =
           '''
 PEC: ${widget.selectedPec}
 Cluster: ${widget.selectedCluster}
+Place: ${widget.place}
 OPD: ${widget.opd}
 Name: ${widget.name}
 Age: ${widget.age}
@@ -79,13 +112,27 @@ N_O: ${widget.selectedNo}
 Phone: ${widget.phone}
 How do you know about PEC?: ${widget.selectedChw}
 Family History: $_selectedFamilyHis
-Diabeties: $_selectedDiabeties
+Diabetes: $_selectedDiabetes
 IOP_RE: ${_iopReController.text.trim()}
 IOP_LE: ${_iopLeController.text.trim()}
 Fundus Taken: $_selectedFundusTaken
 Fund Not Taken Reason: ${_fundNotTakenReasController.text.trim()}
 GlucomaSusRE: $_selectedGlucomaSusRE
 GlucomaSusLE: $_selectedGlucomaSusLE
+Vision: $_vision
+Hearing: $_hearing
+Walking: $_walking
+Remember: $_remember
+Self Care: $_selfCare
+ComCation: $_comCation
+Wear Glass: $_wearGlass
+PVA1: ${_pva1Controller.text.trim()}
+PVA2: ${_pva2Controller.text.trim()}
+PVA Near: ${_pvaNearController.text.trim()}
+Diagnosis Code: ${_diagnosisCodeController.text.trim()}
+OtherM: ${_otherMController.text.trim()}
+Referred: $_referred
+Clinic: ${_clinicController.text.trim()}
 ''';
       showDialog(
         context: context,
@@ -132,10 +179,11 @@ GlucomaSusLE: $_selectedGlucomaSusLE
                 Padding(
                   padding: const EdgeInsets.only(top: 5),
                   child: Text(
-                    state.errorText!,
+                    state.errorText ?? '',
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.error,
                     ),
+                    maxLines: 3,
                   ),
                 ),
             ],
@@ -164,16 +212,18 @@ GlucomaSusLE: $_selectedGlucomaSusLE
             border: OutlineInputBorder(),
             filled: true,
             fillColor: Color(0xFFF5F5F5),
+            errorMaxLines: 3,
           ),
           onChanged: (_) => setState(() {}),
           validator: (value) {
-            if (value == null || value.trim().isEmpty)
-              return 'Please enter $label';
+            final trimmed = value?.trim() ?? '';
+            if (trimmed.isEmpty) return 'Please enter $label';
             if (min != null && max != null) {
-              final number = int.tryParse(value.trim());
+              final number = int.tryParse(trimmed);
               if (number == null) return '$label must be a number';
-              if (number < min || number > max)
+              if (number < min || number > max) {
                 return '$label must be between $min and $max';
+              }
             }
             return null;
           },
@@ -183,18 +233,10 @@ GlucomaSusLE: $_selectedGlucomaSusLE
   }
 
   @override
-  void dispose() {
-    _iopReController.dispose();
-    _iopLeController.dispose();
-    _fundNotTakenReasController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Primary Eye Care - Page 2')),
-      body: Form(
+    return FormPage(
+      title: 'Primary Eye Care - Page 2',
+      child: Form(
         key: _formKey,
         child: ListView(
           padding: const EdgeInsets.all(16),
@@ -207,15 +249,13 @@ GlucomaSusLE: $_selectedGlucomaSusLE
                 onChanged: (v) => setState(() => _selectedFamilyHis = v),
               ),
               const SizedBox(height: 16),
-
               buildDropdown(
-                label: 'Diabeties',
-                selectedValue: _selectedDiabeties,
+                label: 'Diabetes',
+                selectedValue: _selectedDiabetes,
                 items: ['Yes', 'No'],
-                onChanged: (v) => setState(() => _selectedDiabeties = v),
+                onChanged: (v) => setState(() => _selectedDiabetes = v),
               ),
               const SizedBox(height: 16),
-
               if (showIOPFields) ...[
                 buildTextField(
                   label: 'IOP_RE',
@@ -225,7 +265,6 @@ GlucomaSusLE: $_selectedGlucomaSusLE
                   max: 100,
                 ),
                 const SizedBox(height: 16),
-
                 buildTextField(
                   label: 'IOP_LE',
                   controller: _iopLeController,
@@ -235,8 +274,7 @@ GlucomaSusLE: $_selectedGlucomaSusLE
                 ),
                 const SizedBox(height: 16),
               ],
-
-              if (showFundusTaken) ...[
+              if (showFundusFields) ...[
                 buildDropdown(
                   label: 'Fundus Taken',
                   selectedValue: _selectedFundusTaken,
@@ -244,17 +282,13 @@ GlucomaSusLE: $_selectedGlucomaSusLE
                   onChanged: (v) => setState(() => _selectedFundusTaken = v),
                 ),
                 const SizedBox(height: 16),
-              ],
-
-              if (showFundusTaken && showFundNotTakenReason) ...[
-                buildTextField(
-                  label: 'Fund Not Taken Reason',
-                  controller: _fundNotTakenReasController,
-                ),
+                if (showFundNotTakenReason)
+                  buildTextField(
+                    label: 'Fund Not Taken Reason',
+                    controller: _fundNotTakenReasController,
+                  ),
                 const SizedBox(height: 16),
               ],
-
-              // 👉 SHOW only if PEC=1 & FundusTaken=Yes
               if (showGlucomaSusFields) ...[
                 buildDropdown(
                   label: 'GlucomaSusRE',
@@ -263,7 +297,6 @@ GlucomaSusLE: $_selectedGlucomaSusLE
                   onChanged: (v) => setState(() => _selectedGlucomaSusRE = v),
                 ),
                 const SizedBox(height: 16),
-
                 buildDropdown(
                   label: 'GlucomaSusLE',
                   selectedValue: _selectedGlucomaSusLE,
@@ -273,7 +306,80 @@ GlucomaSusLE: $_selectedGlucomaSusLE
                 const SizedBox(height: 16),
               ],
             ],
-
+            if (showNewOnlyFields) ...[
+              buildDropdown(
+                label: 'Vision',
+                selectedValue: _vision,
+                items: difficultyLevels,
+                onChanged: (v) => setState(() => _vision = v),
+              ),
+              const SizedBox(height: 16),
+              buildDropdown(
+                label: 'Hearing',
+                selectedValue: _hearing,
+                items: difficultyLevels,
+                onChanged: (v) => setState(() => _hearing = v),
+              ),
+              const SizedBox(height: 16),
+              buildDropdown(
+                label: 'Walking',
+                selectedValue: _walking,
+                items: difficultyLevels,
+                onChanged: (v) => setState(() => _walking = v),
+              ),
+              const SizedBox(height: 16),
+              buildDropdown(
+                label: 'Remember',
+                selectedValue: _remember,
+                items: difficultyLevels,
+                onChanged: (v) => setState(() => _remember = v),
+              ),
+              const SizedBox(height: 16),
+              buildDropdown(
+                label: 'Self Care',
+                selectedValue: _selfCare,
+                items: difficultyLevels,
+                onChanged: (v) => setState(() => _selfCare = v),
+              ),
+              const SizedBox(height: 16),
+              buildDropdown(
+                label: 'ComCation',
+                selectedValue: _comCation,
+                items: difficultyLevels,
+                onChanged: (v) => setState(() => _comCation = v),
+              ),
+              const SizedBox(height: 16),
+            ],
+            // new fields
+            buildDropdown(
+              label: 'Wear Glass',
+              selectedValue: _wearGlass,
+              items: ['Yes', 'No'],
+              onChanged: (v) => setState(() => _wearGlass = v),
+            ),
+            const SizedBox(height: 16),
+            buildTextField(label: 'PVA1', controller: _pva1Controller),
+            const SizedBox(height: 16),
+            buildTextField(label: 'PVA2', controller: _pva2Controller),
+            const SizedBox(height: 16),
+            buildTextField(label: 'PVA Near', controller: _pvaNearController),
+            const SizedBox(height: 16),
+            buildTextField(
+              label: 'Diagnosis Code',
+              controller: _diagnosisCodeController,
+            ),
+            const SizedBox(height: 16),
+            buildTextField(label: 'OtherM', controller: _otherMController),
+            const SizedBox(height: 16),
+            buildDropdown(
+              label: 'Referred',
+              selectedValue: _referred,
+              items: ['Yes', 'No'],
+              onChanged: (v) => setState(() => _referred = v),
+            ),
+            const SizedBox(height: 16),
+            buildTextField(label: 'Clinic', controller: _clinicController),
+            const SizedBox(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
