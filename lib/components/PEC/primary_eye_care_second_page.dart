@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:myproject/components/dropdown_component.dart';
-import 'package:myproject/components/form_page.dart';
-import 'package:myproject/pages/main_pages/app_specific/form_page.dart'; // import FormPage
+import 'package:myproject/pages/main_pages/app_specific/form_page.dart';
 
 class PrimaryEyeCareSecondPage extends StatefulWidget {
   final String selectedPec,
@@ -37,39 +36,105 @@ class PrimaryEyeCareSecondPage extends StatefulWidget {
 class _PrimaryEyeCareSecondPageState extends State<PrimaryEyeCareSecondPage> {
   final _formKey = GlobalKey<FormState>();
 
-  // existing variables
   String? _selectedFamilyHis, _selectedDiabetes, _selectedFundusTaken;
   String? _selectedGlucomaSusRE, _selectedGlucomaSusLE;
   String? _vision, _hearing, _walking, _remember, _selfCare, _comCation;
+
+  String? _wearGlass,
+      _pva1,
+      _pva2,
+      _pvaNear,
+      _diagnosisCode,
+      _otherM,
+      _referred,
+      _clinic;
 
   final TextEditingController _iopReController = TextEditingController();
   final TextEditingController _iopLeController = TextEditingController();
   final TextEditingController _fundNotTakenReasController =
       TextEditingController();
 
-  // new variables
-  String? _wearGlass, _referred;
-  final TextEditingController _pva1Controller = TextEditingController();
-  final TextEditingController _pva2Controller = TextEditingController();
-  final TextEditingController _pvaNearController = TextEditingController();
-  final TextEditingController _diagnosisCodeController =
-      TextEditingController();
-  final TextEditingController _otherMController = TextEditingController();
-  final TextEditingController _clinicController = TextEditingController();
+  final List<String> yesNoList = ['Yes', 'No'];
+
+  final List<String> pvaLabels = [
+    '6/6',
+    '6/9',
+    '6/12',
+    '6/18',
+    '6/24',
+    '6/36',
+    '6/60',
+    '5/60',
+    '4/60',
+    '3/60',
+    '2/60',
+    '1/60',
+    'FCCF',
+    'HMCF',
+    'PL+',
+    'PL-/ Phthisical Eye',
+    'NC',
+  ];
+
+  final List<String> pvaNearLabels = ['Can Read N6', 'Can\'t Read N6'];
+
+  final List<String> diagnosisLabels = [
+    '1-Normal',
+    '2-Refractive Error',
+    '3-Presbyopia',
+    '4-Conjunctivitis',
+    '5-Cataract',
+    '6-Diseases of adnexa',
+    '7-Eye Injury/Trauma',
+    '8-Squint',
+    '9-Vit-A deficiency',
+    '10-Corneal Opacity',
+    '11-Glaucoma Suspect',
+    '12-DR Suspect',
+    '13-Other',
+    '14-Cataract Sx. Follow up',
+    '15-Retinal Pathologies',
+    '16-Post Cataract Surgical Complications',
+  ];
+
+  final List<String> referredLabels = [
+    '1-Referred to RPC',
+    '2-Referred to DR Clinic',
+    '3-Refraction',
+    '4-Refraction & Referred to RPC',
+    '5-No further Intervention',
+    '6-Same Glass Continue',
+    '7-Followup Next Week',
+    '8-Not Referred due to Complication',
+  ];
+
+  final List<String> clinicLabels = [
+    'Cataract',
+    'Retina Clinic',
+    'Oculoplasty Clinic',
+    'Glaucoma Clinic',
+    'Squint Clinic',
+    'Lasik Clinic',
+    'Eye Bank Clinic',
+    'ROP Clinic',
+    'Myopia Clinic',
+    'Lens Clinic',
+    'Cornea Clinic',
+    'Uvea Clinic',
+    'Amblyopia Clinic',
+    'DR Clinic',
+  ];
 
   final List<String> difficultyLevels = [
-    '1\tNo difficulty',
-    '2\tSome difficulty',
-    '3\tA lot of difficulty',
-    '4\tCannot do at all',
+    'No difficulty',
+    'Some difficulty',
+    'A lot of difficulty',
+    'Cannot do at all',
   ];
 
   bool get showExtraFields => widget.selectedPec == "PEC-1";
-  bool get showIOPFields {
-    final age = int.tryParse(widget.age) ?? 0;
-    return _selectedFamilyHis == "Yes" || age >= 40;
-  }
-
+  bool get showIOPFields =>
+      _selectedFamilyHis == "Yes" || (int.tryParse(widget.age) ?? 0) >= 40;
   bool get showFundusFields {
     if (!showIOPFields) return false;
     final iopRe = int.tryParse(_iopReController.text) ?? 0;
@@ -77,23 +142,21 @@ class _PrimaryEyeCareSecondPageState extends State<PrimaryEyeCareSecondPage> {
     return iopRe >= 25 || iopLe >= 25;
   }
 
-  bool get showFundNotTakenReason =>
-      _selectedFundusTaken != null && _selectedFundusTaken != "Yes";
+  bool get showFundNotTakenReason => _selectedFundusTaken == "No";
   bool get showGlucomaSusFields =>
       widget.selectedPec == "PEC-1" && _selectedFundusTaken == "Yes";
   bool get showNewOnlyFields => widget.selectedNo == "New";
+  bool get showPvaNear => (int.tryParse(widget.age) ?? 0) > 34;
+  bool get showOtherM => _diagnosisCode?.startsWith('12-') ?? false;
+  bool get showClinic =>
+      _referred == '1-Referred to RPC' ||
+      _referred == '4-Refraction & Referred to RPC';
 
   @override
   void dispose() {
     _iopReController.dispose();
     _iopLeController.dispose();
     _fundNotTakenReasController.dispose();
-    _pva1Controller.dispose();
-    _pva2Controller.dispose();
-    _pvaNearController.dispose();
-    _diagnosisCodeController.dispose();
-    _otherMController.dispose();
-    _clinicController.dispose();
     super.dispose();
   }
 
@@ -110,7 +173,6 @@ Age: ${widget.age}
 Sex: ${widget.selectedSex}
 N_O: ${widget.selectedNo}
 Phone: ${widget.phone}
-How do you know about PEC?: ${widget.selectedChw}
 Family History: $_selectedFamilyHis
 Diabetes: $_selectedDiabetes
 IOP_RE: ${_iopReController.text.trim()}
@@ -126,13 +188,13 @@ Remember: $_remember
 Self Care: $_selfCare
 ComCation: $_comCation
 Wear Glass: $_wearGlass
-PVA1: ${_pva1Controller.text.trim()}
-PVA2: ${_pva2Controller.text.trim()}
-PVA Near: ${_pvaNearController.text.trim()}
-Diagnosis Code: ${_diagnosisCodeController.text.trim()}
-OtherM: ${_otherMController.text.trim()}
+PVA1: $_pva1
+PVA2: $_pva2
+PVA Near: $_pvaNear
+Diagnosis Code: $_diagnosisCode
+OtherM: $_otherM
 Referred: $_referred
-Clinic: ${_clinicController.text.trim()}
+Clinic: $_clinic
 ''';
       showDialog(
         context: context,
@@ -170,9 +232,9 @@ Clinic: ${_clinicController.text.trim()}
               CustomDropdownAttached(
                 items: items,
                 selectedValue: selectedValue,
-                onChanged: (value) {
-                  onChanged(value);
-                  state.didChange(value);
+                onChanged: (v) {
+                  onChanged(v);
+                  state.didChange(v);
                 },
               ),
               if (state.hasError)
@@ -183,7 +245,6 @@ Clinic: ${_clinicController.text.trim()}
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.error,
                     ),
-                    maxLines: 3,
                   ),
                 ),
             ],
@@ -196,9 +257,6 @@ Clinic: ${_clinicController.text.trim()}
   Widget buildTextField({
     required String label,
     required TextEditingController controller,
-    TextInputType? keyboardType,
-    int? min,
-    int? max,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -207,26 +265,9 @@ Clinic: ${_clinicController.text.trim()}
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,
-          keyboardType: keyboardType,
-          decoration: const InputDecoration(
-            border: OutlineInputBorder(),
-            filled: true,
-            fillColor: Color(0xFFF5F5F5),
-            errorMaxLines: 3,
-          ),
-          onChanged: (_) => setState(() {}),
-          validator: (value) {
-            final trimmed = value?.trim() ?? '';
-            if (trimmed.isEmpty) return 'Please enter $label';
-            if (min != null && max != null) {
-              final number = int.tryParse(trimmed);
-              if (number == null) return '$label must be a number';
-              if (number < min || number > max) {
-                return '$label must be between $min and $max';
-              }
-            }
-            return null;
-          },
+          decoration: const InputDecoration(border: OutlineInputBorder()),
+          validator: (v) =>
+              (v?.trim().isEmpty ?? true) ? 'Please enter $label' : null,
         ),
       ],
     );
@@ -245,40 +286,28 @@ Clinic: ${_clinicController.text.trim()}
               buildDropdown(
                 label: 'Family History',
                 selectedValue: _selectedFamilyHis,
-                items: ['Yes', 'No'],
+                items: yesNoList,
                 onChanged: (v) => setState(() => _selectedFamilyHis = v),
               ),
               const SizedBox(height: 16),
               buildDropdown(
                 label: 'Diabetes',
                 selectedValue: _selectedDiabetes,
-                items: ['Yes', 'No'],
+                items: yesNoList,
                 onChanged: (v) => setState(() => _selectedDiabetes = v),
               ),
               const SizedBox(height: 16),
               if (showIOPFields) ...[
-                buildTextField(
-                  label: 'IOP_RE',
-                  controller: _iopReController,
-                  keyboardType: TextInputType.number,
-                  min: 0,
-                  max: 100,
-                ),
+                buildTextField(label: 'IOP_RE', controller: _iopReController),
                 const SizedBox(height: 16),
-                buildTextField(
-                  label: 'IOP_LE',
-                  controller: _iopLeController,
-                  keyboardType: TextInputType.number,
-                  min: 0,
-                  max: 100,
-                ),
+                buildTextField(label: 'IOP_LE', controller: _iopLeController),
                 const SizedBox(height: 16),
               ],
               if (showFundusFields) ...[
                 buildDropdown(
                   label: 'Fundus Taken',
                   selectedValue: _selectedFundusTaken,
-                  items: ['Yes', 'No'],
+                  items: yesNoList,
                   onChanged: (v) => setState(() => _selectedFundusTaken = v),
                 ),
                 const SizedBox(height: 16),
@@ -293,14 +322,14 @@ Clinic: ${_clinicController.text.trim()}
                 buildDropdown(
                   label: 'GlucomaSusRE',
                   selectedValue: _selectedGlucomaSusRE,
-                  items: ['Yes', 'No'],
+                  items: yesNoList,
                   onChanged: (v) => setState(() => _selectedGlucomaSusRE = v),
                 ),
                 const SizedBox(height: 16),
                 buildDropdown(
                   label: 'GlucomaSusLE',
                   selectedValue: _selectedGlucomaSusLE,
-                  items: ['Yes', 'No'],
+                  items: yesNoList,
                   onChanged: (v) => setState(() => _selectedGlucomaSusLE = v),
                 ),
                 const SizedBox(height: 16),
@@ -350,35 +379,67 @@ Clinic: ${_clinicController.text.trim()}
               ),
               const SizedBox(height: 16),
             ],
-            // new fields
             buildDropdown(
               label: 'Wear Glass',
               selectedValue: _wearGlass,
-              items: ['Yes', 'No'],
+              items: yesNoList,
               onChanged: (v) => setState(() => _wearGlass = v),
             ),
             const SizedBox(height: 16),
-            buildTextField(label: 'PVA1', controller: _pva1Controller),
-            const SizedBox(height: 16),
-            buildTextField(label: 'PVA2', controller: _pva2Controller),
-            const SizedBox(height: 16),
-            buildTextField(label: 'PVA Near', controller: _pvaNearController),
-            const SizedBox(height: 16),
-            buildTextField(
-              label: 'Diagnosis Code',
-              controller: _diagnosisCodeController,
+            buildDropdown(
+              label: 'PVA1',
+              selectedValue: _pva1,
+              items: pvaLabels,
+              onChanged: (v) => setState(() => _pva1 = v),
             ),
             const SizedBox(height: 16),
-            buildTextField(label: 'OtherM', controller: _otherMController),
+            buildDropdown(
+              label: 'PVA2',
+              selectedValue: _pva2,
+              items: pvaLabels,
+              onChanged: (v) => setState(() => _pva2 = v),
+            ),
+            const SizedBox(height: 16),
+            if (showPvaNear)
+              buildDropdown(
+                label: 'PVA Near',
+                selectedValue: _pvaNear,
+                items: pvaNearLabels,
+                onChanged: (v) => setState(() => _pvaNear = v),
+              ),
+            const SizedBox(height: 16),
+            buildDropdown(
+              label: 'Diagnosis Code',
+              selectedValue: _diagnosisCode,
+              items: diagnosisLabels,
+              onChanged: (v) => setState(() => _diagnosisCode = v),
+            ),
+            const SizedBox(height: 16),
+            if (showOtherM)
+              TextFormField(
+                decoration: const InputDecoration(
+                  labelText: 'OtherM',
+                  border: OutlineInputBorder(),
+                ),
+                onChanged: (v) => _otherM = v,
+                validator: (v) =>
+                    (v?.trim().isEmpty ?? true) ? 'Please enter OtherM' : null,
+              ),
             const SizedBox(height: 16),
             buildDropdown(
               label: 'Referred',
               selectedValue: _referred,
-              items: ['Yes', 'No'],
+              items: referredLabels,
               onChanged: (v) => setState(() => _referred = v),
             ),
             const SizedBox(height: 16),
-            buildTextField(label: 'Clinic', controller: _clinicController),
+            if (showClinic)
+              buildDropdown(
+                label: 'Clinic',
+                selectedValue: _clinic,
+                items: clinicLabels,
+                onChanged: (v) => setState(() => _clinic = v),
+              ),
             const SizedBox(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
