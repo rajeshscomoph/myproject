@@ -400,14 +400,15 @@ Clinic: $_clinic
               onChanged: (v) => setState(() => _pva2 = v),
             ),
             const SizedBox(height: 16),
-            if (showPvaNear)
+            if (showPvaNear) ...[
               buildDropdown(
                 label: 'PVA Near',
                 selectedValue: _pvaNear,
                 items: pvaNearLabels,
                 onChanged: (v) => setState(() => _pvaNear = v),
               ),
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
+            ],
             buildDropdown(
               label: 'Diagnosis Code',
               selectedValue: _diagnosisCode,
@@ -415,7 +416,7 @@ Clinic: $_clinic
               onChanged: (v) => setState(() => _diagnosisCode = v),
             ),
             const SizedBox(height: 16),
-            if (showOtherM)
+            if (showOtherM) ...[
               TextFormField(
                 decoration: const InputDecoration(
                   labelText: 'OtherM',
@@ -425,7 +426,8 @@ Clinic: $_clinic
                 validator: (v) =>
                     (v?.trim().isEmpty ?? true) ? 'Please enter OtherM' : null,
               ),
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
+            ],
             buildDropdown(
               label: 'Referred',
               selectedValue: _referred,
@@ -433,13 +435,15 @@ Clinic: $_clinic
               onChanged: (v) => setState(() => _referred = v),
             ),
             const SizedBox(height: 16),
-            if (showClinic)
+            if (showClinic) ...[
               buildDropdown(
                 label: 'Clinic',
                 selectedValue: _clinic,
                 items: clinicLabels,
                 onChanged: (v) => setState(() => _clinic = v),
               ),
+              const SizedBox(height: 16),
+            ],
             const SizedBox(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,

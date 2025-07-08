@@ -3,8 +3,7 @@ import 'package:myproject/components/dropdown_component.dart';
 import 'primary_eye_care_second_page.dart';
 
 class PrimaryEyeCareFirstPage extends StatefulWidget {
-  final GlobalKey<FormState> formKey;
-  const PrimaryEyeCareFirstPage({super.key, required this.formKey});
+  const PrimaryEyeCareFirstPage({super.key});
 
   @override
   State<PrimaryEyeCareFirstPage> createState() =>
@@ -12,6 +11,8 @@ class PrimaryEyeCareFirstPage extends StatefulWidget {
 }
 
 class _PrimaryEyeCareFirstPageState extends State<PrimaryEyeCareFirstPage> {
+  final _formKey = GlobalKey<FormState>();
+
   String? _selectedPec;
   String? _selectedCluster;
   String? _selectedSex;
@@ -66,7 +67,7 @@ class _PrimaryEyeCareFirstPageState extends State<PrimaryEyeCareFirstPage> {
   }
 
   void _goToNextPage() {
-    if (widget.formKey.currentState!.validate()) {
+    if (_formKey.currentState!.validate()) {
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -136,7 +137,7 @@ class _PrimaryEyeCareFirstPageState extends State<PrimaryEyeCareFirstPage> {
         ),
       ],
     );
-  } 
+  }
 
   Widget buildTextField({
     required String label,
@@ -186,7 +187,7 @@ class _PrimaryEyeCareFirstPageState extends State<PrimaryEyeCareFirstPage> {
   @override
   Widget build(BuildContext context) {
     return Form(
-      key: widget.formKey,
+      key: _formKey,
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -243,7 +244,7 @@ class _PrimaryEyeCareFirstPageState extends State<PrimaryEyeCareFirstPage> {
             label: 'Sex',
             selectedValue: _selectedSex,
             items: ['Male', 'Female', 'Other'],
-            onChanged: (value) => setState(() => _selectedSex = value),            
+            onChanged: (value) => setState(() => _selectedSex = value),
           ),
           const SizedBox(height: 16),
 
