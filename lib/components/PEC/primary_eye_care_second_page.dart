@@ -438,12 +438,14 @@ class _PrimaryEyeCareSecondPageState extends State<PrimaryEyeCareSecondPage> {
                         onChanged: (v) => _referred = v,
                       ),
                       if (showClinic)
-                        buildRadioGroup(
-                          title: '🏥 Referred Clinic',
-                          options: clinicLabels,
-                          selectedValue: _clinic,
-                          onChanged: (v) => _clinic = v,
-                        ),
+                        buildCard('Referred Clinic', Icons.medical_services, [
+                          buildRadioGroup(
+                            title: 'Referred Clinic',
+                            options: clinicLabels,
+                            selectedValue: _clinic,
+                            onChanged: (v) => _clinic = v,
+                          ),
+                        ]),
                     ]),
                     const SizedBox(height: 20),
                     Row(
