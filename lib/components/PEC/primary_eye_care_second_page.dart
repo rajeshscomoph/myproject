@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:myproject/components/dropdown_component.dart';
 import 'package:myproject/pages/main_pages/app_specific/form_page.dart';
 
 class PrimaryEyeCareSecondPage extends StatefulWidget {
@@ -39,15 +38,8 @@ class _PrimaryEyeCareSecondPageState extends State<PrimaryEyeCareSecondPage> {
   String? _selectedFamilyHis, _selectedDiabetes, _selectedFundusTaken;
   String? _selectedGlucomaSusRE, _selectedGlucomaSusLE;
   String? _vision, _hearing, _walking, _remember, _selfCare, _comCation;
-
-  String? _wearGlass,
-      _pva1,
-      _pva2,
-      _pvaNear,
-      _diagnosisCode,
-      _otherM,
-      _referred,
-      _clinic;
+  String? _wearGlass, _pva1, _pva2, _pvaNear, _diagnosisCode, _otherM;
+  String? _referred, _clinic;
 
   final TextEditingController _iopReController = TextEditingController();
   final TextEditingController _iopLeController = TextEditingController();
@@ -55,7 +47,6 @@ class _PrimaryEyeCareSecondPageState extends State<PrimaryEyeCareSecondPage> {
       TextEditingController();
 
   final List<String> yesNoList = ['Yes', 'No'];
-
   final List<String> pvaLabels = [
     '6/6',
     '6/9',
@@ -75,9 +66,7 @@ class _PrimaryEyeCareSecondPageState extends State<PrimaryEyeCareSecondPage> {
     'PL-/ Phthisical Eye',
     'NC',
   ];
-
-  final List<String> pvaNearLabels = ['Can Read N6', 'Can\'t Read N6'];
-
+  final List<String> pvaNearLabels = ['Can Read N6', "Can't Read N6"];
   final List<String> diagnosisLabels = [
     '1-Normal',
     '2-Refractive Error',
@@ -96,7 +85,6 @@ class _PrimaryEyeCareSecondPageState extends State<PrimaryEyeCareSecondPage> {
     '15-Retinal Pathologies',
     '16-Post Cataract Surgical Complications',
   ];
-
   final List<String> referredLabels = [
     '1-Referred to RPC',
     '2-Referred to DR Clinic',
@@ -107,7 +95,6 @@ class _PrimaryEyeCareSecondPageState extends State<PrimaryEyeCareSecondPage> {
     '7-Followup Next Week',
     '8-Not Referred due to Complication',
   ];
-
   final List<String> clinicLabels = [
     'Cataract',
     'Retina Clinic',
@@ -124,7 +111,6 @@ class _PrimaryEyeCareSecondPageState extends State<PrimaryEyeCareSecondPage> {
     'Amblyopia Clinic',
     'DR Clinic',
   ];
-
   final List<String> difficultyLevels = [
     'No difficulty',
     'Some difficulty',
@@ -147,7 +133,7 @@ class _PrimaryEyeCareSecondPageState extends State<PrimaryEyeCareSecondPage> {
       widget.selectedPec == "PEC-1" && _selectedFundusTaken == "Yes";
   bool get showNewOnlyFields => widget.selectedNo == "New";
   bool get showPvaNear => (int.tryParse(widget.age) ?? 0) > 34;
-  bool get showOtherM => _diagnosisCode?.startsWith('12-') ?? false;
+  bool get showOtherM => (_diagnosisCode?.startsWith('13-') ?? false);
   bool get showClinic =>
       _referred == '1-Referred to RPC' ||
       _referred == '4-Refraction & Referred to RPC';
@@ -161,46 +147,12 @@ class _PrimaryEyeCareSecondPageState extends State<PrimaryEyeCareSecondPage> {
   }
 
   void _submitForm() {
-    if (_formKey.currentState!.validate()) {
-      final summary =
-          '''
-PEC: ${widget.selectedPec}
-Cluster: ${widget.selectedCluster}
-Place: ${widget.place}
-OPD: ${widget.opd}
-Name: ${widget.name}
-Age: ${widget.age}
-Sex: ${widget.selectedSex}
-N_O: ${widget.selectedNo}
-Phone: ${widget.phone}
-Family History: $_selectedFamilyHis
-Diabetes: $_selectedDiabetes
-IOP_RE: ${_iopReController.text.trim()}
-IOP_LE: ${_iopLeController.text.trim()}
-Fundus Taken: $_selectedFundusTaken
-Fund Not Taken Reason: ${_fundNotTakenReasController.text.trim()}
-GlucomaSusRE: $_selectedGlucomaSusRE
-GlucomaSusLE: $_selectedGlucomaSusLE
-Vision: $_vision
-Hearing: $_hearing
-Walking: $_walking
-Remember: $_remember
-Self Care: $_selfCare
-ComCation: $_comCation
-Wear Glass: $_wearGlass
-PVA1: $_pva1
-PVA2: $_pva2
-PVA Near: $_pvaNear
-Diagnosis Code: $_diagnosisCode
-OtherM: $_otherM
-Referred: $_referred
-Clinic: $_clinic
-''';
+    if (_formKey.currentState?.validate() ?? false) {
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
           title: const Text('Form Submitted'),
-          content: SingleChildScrollView(child: Text(summary)),
+          content: const Text('Your form has been submitted successfully!'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -212,64 +164,59 @@ Clinic: $_clinic
     }
   }
 
-  Widget buildDropdown({
-    required String label,
+  Widget buildRadioGroup({
+    required String title,
+    required List<String> options,
     required String? selectedValue,
-    required List<String> items,
-    required ValueChanged<String?> onChanged,
+    required void Function(String?) onChanged,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 8),
-        FormField<String>(
-          validator: (_) =>
-              selectedValue == null ? 'Please select $label' : null,
-          builder: (state) => Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              CustomDropdownAttached(
-                items: items,
-                selectedValue: selectedValue,
-                onChanged: (v) {
-                  onChanged(v);
-                  state.didChange(v);
-                },
-              ),
-              if (state.hasError)
-                Padding(
-                  padding: const EdgeInsets.only(top: 5),
-                  child: Text(
-                    state.errorText ?? '',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 10,
+              runSpacing: 4,
+              children: options.map((opt) {
+                return ChoiceChip(
+                  label: Text(opt),
+                  selected: selectedValue == opt,
+                  onSelected: (_) => setState(() => onChanged(opt)),
+                  selectedColor: Colors.blueAccent,
+                  labelStyle: TextStyle(
+                    color: selectedValue == opt ? Colors.white : Colors.black,
                   ),
-                ),
-            ],
-          ),
+                );
+              }).toList(),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
-  Widget buildTextField({
-    required String label,
-    required TextEditingController controller,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 8),
-        TextFormField(
+  Widget buildTextField(String label, TextEditingController controller) {
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: TextFormField(
           controller: controller,
-          decoration: const InputDecoration(border: OutlineInputBorder()),
+          decoration: InputDecoration(
+            labelText: label,
+            border: const OutlineInputBorder(),
+          ),
           validator: (v) =>
               (v?.trim().isEmpty ?? true) ? 'Please enter $label' : null,
         ),
-      ],
+      ),
     );
   }
 
@@ -280,181 +227,153 @@ Clinic: $_clinic
       child: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(12),
           children: [
             if (showExtraFields) ...[
-              buildDropdown(
-                label: 'Family History',
+              buildRadioGroup(
+                title: 'Family History',
+                options: yesNoList,
                 selectedValue: _selectedFamilyHis,
-                items: yesNoList,
-                onChanged: (v) => setState(() => _selectedFamilyHis = v),
+                onChanged: (v) => _selectedFamilyHis = v,
               ),
-              const SizedBox(height: 16),
-              buildDropdown(
-                label: 'Diabetes',
+              buildRadioGroup(
+                title: 'Diabetes',
+                options: yesNoList,
                 selectedValue: _selectedDiabetes,
-                items: yesNoList,
-                onChanged: (v) => setState(() => _selectedDiabetes = v),
+                onChanged: (v) => _selectedDiabetes = v,
               ),
-              const SizedBox(height: 16),
               if (showIOPFields) ...[
-                buildTextField(label: 'IOP_RE', controller: _iopReController),
-                const SizedBox(height: 16),
-                buildTextField(label: 'IOP_LE', controller: _iopLeController),
-                const SizedBox(height: 16),
+                buildTextField('IOP_RE', _iopReController),
+                buildTextField('IOP_LE', _iopLeController),
               ],
               if (showFundusFields) ...[
-                buildDropdown(
-                  label: 'Fundus Taken',
+                buildRadioGroup(
+                  title: 'Fundus Taken',
+                  options: yesNoList,
                   selectedValue: _selectedFundusTaken,
-                  items: yesNoList,
-                  onChanged: (v) => setState(() => _selectedFundusTaken = v),
+                  onChanged: (v) => _selectedFundusTaken = v,
                 ),
-                const SizedBox(height: 16),
                 if (showFundNotTakenReason)
                   buildTextField(
-                    label: 'Fund Not Taken Reason',
-                    controller: _fundNotTakenReasController,
+                    'Fund Not Taken Reason',
+                    _fundNotTakenReasController,
                   ),
-                const SizedBox(height: 16),
               ],
               if (showGlucomaSusFields) ...[
-                buildDropdown(
-                  label: 'GlucomaSusRE',
+                buildRadioGroup(
+                  title: 'GlucomaSusRE',
+                  options: yesNoList,
                   selectedValue: _selectedGlucomaSusRE,
-                  items: yesNoList,
-                  onChanged: (v) => setState(() => _selectedGlucomaSusRE = v),
+                  onChanged: (v) => _selectedGlucomaSusRE = v,
                 ),
-                const SizedBox(height: 16),
-                buildDropdown(
-                  label: 'GlucomaSusLE',
+                buildRadioGroup(
+                  title: 'GlucomaSusLE',
+                  options: yesNoList,
                   selectedValue: _selectedGlucomaSusLE,
-                  items: yesNoList,
-                  onChanged: (v) => setState(() => _selectedGlucomaSusLE = v),
+                  onChanged: (v) => _selectedGlucomaSusLE = v,
                 ),
-                const SizedBox(height: 16),
               ],
             ],
             if (showNewOnlyFields) ...[
-              buildDropdown(
-                label: 'Vision',
+              buildRadioGroup(
+                title: 'Vision',
+                options: difficultyLevels,
                 selectedValue: _vision,
-                items: difficultyLevels,
-                onChanged: (v) => setState(() => _vision = v),
+                onChanged: (v) => _vision = v,
               ),
-              const SizedBox(height: 16),
-              buildDropdown(
-                label: 'Hearing',
+              buildRadioGroup(
+                title: 'Hearing',
+                options: difficultyLevels,
                 selectedValue: _hearing,
-                items: difficultyLevels,
-                onChanged: (v) => setState(() => _hearing = v),
+                onChanged: (v) => _hearing = v,
               ),
-              const SizedBox(height: 16),
-              buildDropdown(
-                label: 'Walking',
+              buildRadioGroup(
+                title: 'Walking',
+                options: difficultyLevels,
                 selectedValue: _walking,
-                items: difficultyLevels,
-                onChanged: (v) => setState(() => _walking = v),
+                onChanged: (v) => _walking = v,
               ),
-              const SizedBox(height: 16),
-              buildDropdown(
-                label: 'Remember',
+              buildRadioGroup(
+                title: 'Remember',
+                options: difficultyLevels,
                 selectedValue: _remember,
-                items: difficultyLevels,
-                onChanged: (v) => setState(() => _remember = v),
+                onChanged: (v) => _remember = v,
               ),
-              const SizedBox(height: 16),
-              buildDropdown(
-                label: 'Self Care',
+              buildRadioGroup(
+                title: 'Self Care',
+                options: difficultyLevels,
                 selectedValue: _selfCare,
-                items: difficultyLevels,
-                onChanged: (v) => setState(() => _selfCare = v),
+                onChanged: (v) => _selfCare = v,
               ),
-              const SizedBox(height: 16),
-              buildDropdown(
-                label: 'ComCation',
+              buildRadioGroup(
+                title: 'ComCation',
+                options: difficultyLevels,
                 selectedValue: _comCation,
-                items: difficultyLevels,
-                onChanged: (v) => setState(() => _comCation = v),
+                onChanged: (v) => _comCation = v,
               ),
-              const SizedBox(height: 16),
             ],
-            buildDropdown(
-              label: 'Wear Glass',
+            buildRadioGroup(
+              title: 'Wear Glass',
+              options: yesNoList,
               selectedValue: _wearGlass,
-              items: yesNoList,
-              onChanged: (v) => setState(() => _wearGlass = v),
+              onChanged: (v) => _wearGlass = v,
             ),
-            const SizedBox(height: 16),
-            buildDropdown(
-              label: 'PVA1',
+            buildRadioGroup(
+              title: 'PVA1',
+              options: pvaLabels,
               selectedValue: _pva1,
-              items: pvaLabels,
-              onChanged: (v) => setState(() => _pva1 = v),
+              onChanged: (v) => _pva1 = v,
             ),
-            const SizedBox(height: 16),
-            buildDropdown(
-              label: 'PVA2',
+            buildRadioGroup(
+              title: 'PVA2',
+              options: pvaLabels,
               selectedValue: _pva2,
-              items: pvaLabels,
-              onChanged: (v) => setState(() => _pva2 = v),
+              onChanged: (v) => _pva2 = v,
             ),
-            const SizedBox(height: 16),
-            if (showPvaNear) ...[
-              buildDropdown(
-                label: 'PVA Near',
+            if (showPvaNear)
+              buildRadioGroup(
+                title: 'PVA Near',
+                options: pvaNearLabels,
                 selectedValue: _pvaNear,
-                items: pvaNearLabels,
-                onChanged: (v) => setState(() => _pvaNear = v),
+                onChanged: (v) => _pvaNear = v,
               ),
-              const SizedBox(height: 16),
-            ],
-            buildDropdown(
-              label: 'Diagnosis Code',
+            buildRadioGroup(
+              title: 'Diagnosis Code',
+              options: diagnosisLabels,
               selectedValue: _diagnosisCode,
-              items: diagnosisLabels,
-              onChanged: (v) => setState(() => _diagnosisCode = v),
+              onChanged: (v) => _diagnosisCode = v,
             ),
-            const SizedBox(height: 16),
-            if (showOtherM) ...[
-              TextFormField(
-                decoration: const InputDecoration(
-                  labelText: 'OtherM',
-                  border: OutlineInputBorder(),
-                ),
-                onChanged: (v) => _otherM = v,
-                validator: (v) =>
-                    (v?.trim().isEmpty ?? true) ? 'Please enter OtherM' : null,
+            if (showOtherM)
+              buildTextField(
+                'OtherM',
+                TextEditingController(text: _otherM ?? ''),
               ),
-              const SizedBox(height: 16),
-            ],
-            buildDropdown(
-              label: 'Referred',
+            buildRadioGroup(
+              title: 'Referred',
+              options: referredLabels,
               selectedValue: _referred,
-              items: referredLabels,
-              onChanged: (v) => setState(() => _referred = v),
+              onChanged: (v) => _referred = v,
             ),
-            const SizedBox(height: 16),
-            if (showClinic) ...[
-              buildDropdown(
-                label: 'Clinic',
+            if (showClinic)
+              buildRadioGroup(
+                title: 'Clinic',
+                options: clinicLabels,
                 selectedValue: _clinic,
-                items: clinicLabels,
-                onChanged: (v) => setState(() => _clinic = v),
+                onChanged: (v) => _clinic = v,
               ),
-              const SizedBox(height: 16),
-            ],
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                ElevatedButton(
+                ElevatedButton.icon(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Back'),
+                  icon: const Icon(Icons.arrow_back),
+                  label: const Text('Back'),
                 ),
-                ElevatedButton(
+                ElevatedButton.icon(
                   onPressed: _submitForm,
-                  child: const Text('Submit'),
+                  icon: const Icon(Icons.check),
+                  label: const Text('Submit'),
                 ),
               ],
             ),
