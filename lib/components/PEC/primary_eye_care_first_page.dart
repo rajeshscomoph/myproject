@@ -26,32 +26,32 @@ class _PrimaryEyeCareFirstPageState extends State<PrimaryEyeCareFirstPage>
   final TextEditingController _phoneController = TextEditingController();
 
   final Map<String, List<String>> pecClusters = {
-    'PEC-1': ['17-Trilokpuri'],
+    'PEC-1': ['Trilokpuri'],
     'PEC-2': [
-      '13-Nangli',
-      '25-Mehrauli',
-      '31-Jaunapur',
-      '32-Fatehpur Beri',
-      '44-Dharuhera',
-      '49-Sarai Kale Khan',
+      'Nangli',
+      'Mehrauli',
+      'Jaunapur',
+      'Fatehpur Beri',
+      'Dharuhera',
+      'Sarai Kale Khan',
     ],
     'PEC-3': [
-      '4-Sanjay Colony',
-      '16-Jatkhor',
-      '34-Tauru',
-      '43-Janak puri',
-      '46-Patel Garden',
-      '50-Sohna',
+      'Sanjay Colony',
+      'Jatkhor',
+      'Tauru',
+      'Janak Puri',
+      'Patel Garden',
+      'Sohna',
     ],
     'PEC-4': [
-      '36-Nangal Raya',
-      '45-Chirag Delhi',
-      '39-Basant Gaon',
-      '52-Batla House',
-      '53-Garhi',
-      '54-Madipur',
+      'Nangal Raya',
+      'Chirag Delhi',
+      'Basant Gaon',
+      'Batla House',
+      'Garhi',
+      'Madipur',
     ],
-    'PEC-5': ['47-Punjabi Bagh/SSMI', '55-Majnu ka Tila', '99-RIP/Camp'],
+    'PEC-5': ['Punjabi Bagh/SSMI', 'Majnu ka Tila', 'RIP/Camp'],
   };
 
   bool get showChwField => _selectedNo != "Old";
@@ -63,7 +63,9 @@ class _PrimaryEyeCareFirstPageState extends State<PrimaryEyeCareFirstPage>
   void initState() {
     super.initState();
     _controller = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 600));
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
     _fadeIn = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
     _controller.forward();
   }
@@ -103,20 +105,27 @@ class _PrimaryEyeCareFirstPageState extends State<PrimaryEyeCareFirstPage>
 
   Widget buildSectionCard({required String title, required Widget child}) {
     return Card(
+      color: Colors.teal.shade50,
       elevation: 3,
+      shadowColor: Colors.teal.withOpacity(0.2),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       margin: const EdgeInsets.only(bottom: 20),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(4),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title,
-                style: Theme.of(context)
-                    .textTheme
-                    .titleMedium!
-                    .copyWith(color: Colors.blueAccent, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
+            if (title.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                    color: Colors.teal.shade800,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
             child,
           ],
         ),
@@ -139,9 +148,11 @@ class _PrimaryEyeCareFirstPageState extends State<PrimaryEyeCareFirstPage>
       keyboardType: keyboardType,
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: icon != null ? Icon(icon) : null,
+        prefixIcon: icon != null
+            ? Icon(icon, color: Colors.teal.shade700)
+            : null,
         filled: true,
-        fillColor: Colors.grey[100],
+        fillColor: Colors.white,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       ),
       validator: (value) {
@@ -160,7 +171,7 @@ class _PrimaryEyeCareFirstPageState extends State<PrimaryEyeCareFirstPage>
     );
   }
 
-  Widget buildRadioGroup({
+  Widget buildChoiceChipsWrap({
     required String label,
     required String? selectedValue,
     required List<String> items,
@@ -169,22 +180,72 @@ class _PrimaryEyeCareFirstPageState extends State<PrimaryEyeCareFirstPage>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
-            style:
-                const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-        const SizedBox(height: 6),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+            fontWeight: FontWeight.w600,
+            color: Colors.teal.shade800,
+          ),
+        ),
+        const SizedBox(height: 8),
         Wrap(
           spacing: 8,
-          runSpacing: -4,
+          runSpacing: 8,
           children: items.map((item) {
             return ChoiceChip(
-              label: Text(item),
+              label: Text(item, style: const TextStyle(fontSize: 14)),
               selected: selectedValue == item,
-              onSelected: (_) => onChanged(item),
-              selectedColor: Colors.blueAccent.withOpacity(0.7),
-              backgroundColor: Colors.grey[200],
+              onSelected: (_) => setState(() => onChanged(item)),
+              selectedColor: Colors.teal.shade700,
+              backgroundColor: Colors.grey.shade200,
               labelStyle: TextStyle(
                 color: selectedValue == item ? Colors.white : Colors.black,
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget buildChoiceChipsRow({
+    required String label,
+    required String? selectedValue,
+    required List<String> items,
+    required ValueChanged<String?> onChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+            fontWeight: FontWeight.w600,
+            color: Colors.teal.shade800,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: items.map((item) {
+            return Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: ChoiceChip(
+                label: Text(item, style: const TextStyle(fontSize: 14)),
+                selected: selectedValue == item,
+                onSelected: (_) => setState(() => onChanged(item)),
+                selectedColor: Colors.teal.shade700,
+                backgroundColor: Colors.grey.shade200,
+                labelStyle: TextStyle(
+                  color: selectedValue == item ? Colors.white : Colors.black,
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
               ),
             );
           }).toList(),
@@ -195,139 +256,154 @@ class _PrimaryEyeCareFirstPageState extends State<PrimaryEyeCareFirstPage>
 
   @override
   Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _fadeIn,
-      child: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Text('Primary Eye Care Form',
-                style: Theme.of(context)
-                    .textTheme
-                    .headlineSmall!
-                    .copyWith(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
-
-            buildSectionCard(
-                            child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    return Scaffold(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFE0F7FA), Color(0xFFB2EBF2)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: FadeTransition(
+            opacity: _fadeIn,
+            child: Form(
+              key: _formKey,
+              child: ListView(
+                padding: const EdgeInsets.all(16),
                 children: [
-                  buildRadioGroup(
-                    label: 'PEC',
-                    selectedValue: _selectedPec,
-                    items: pecClusters.keys.toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedPec = value;
-                        _selectedCluster = null;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  if (_selectedPec != null)
-                    buildRadioGroup(
-                      label: 'Cluster',
-                      selectedValue: _selectedCluster,
-                      items: pecClusters[_selectedPec!]!,
-                      onChanged: (value) =>
-                          setState(() => _selectedCluster = value),
+                  Text(
+                    'Primary Eye Care Form',
+                    style: Theme.of(context).textTheme.headlineSmall!.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.teal.shade800,
                     ),
-                  if (_selectedCluster == '99-RIP/Camp') ...[
-                    const SizedBox(height: 12),
-                    buildTextField(
-                        label: 'Place',
-                        controller: _placeController,
-                        icon: Icons.location_on),
-                  ],
-                ],
-              ), title: '',
-            ),
-
-            buildSectionCard(
-              title: 'Patient Details',
-              child: Column(
-                children: [
-                  buildTextField(
-                    label: 'OPD Number',
-                    controller: _opdController,
-                    keyboardType: TextInputType.number,
-                    min: 0,
-                    max: 99999999,
-                    icon: Icons.confirmation_number,
                   ),
-                  const SizedBox(height: 12),
-                  buildTextField(
-                      label: 'Name', controller: _nameController, icon: Icons.person),
-                  const SizedBox(height: 12),
-                  buildTextField(
-                    label: 'Age',
-                    controller: _ageController,
-                    keyboardType: TextInputType.number,
-                    min: 0,
-                    max: 100,
-                    icon: Icons.cake,
-                  ),
-                  const SizedBox(height: 12),
-                  buildRadioGroup(
-                    label: 'Sex',
-                    selectedValue: _selectedSex,
-                    items: ['Male', 'Female', 'Other'],
-                    onChanged: (value) => setState(() => _selectedSex = value),
-                  ),
-                  const SizedBox(height: 12),
-                  buildRadioGroup(
-                    label: 'N_O',
-                    selectedValue: _selectedNo,
-                    items: ['New', 'Old'],
-                    onChanged: (value) => setState(() => _selectedNo = value),
-                  ),
-                  if (showChwField) ...[
-                    const SizedBox(height: 12),
-                    buildRadioGroup(
-                      label: 'How do you know about PEC?',
-                      selectedValue: _selectedChw,
-                      items: ['Self', 'ASHA/Volunteer', 'Other'],
-                      onChanged: (value) =>
-                          setState(() => _selectedChw = value),
+                  const SizedBox(height: 16),
+                  buildSectionCard(
+                    title: 'Center Selection',
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        buildChoiceChipsWrap(
+                          label: 'PEC',
+                          selectedValue: _selectedPec,
+                          items: pecClusters.keys.toList(),
+                          onChanged: (value) {
+                            _selectedPec = value;
+                            _selectedCluster = null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        if (_selectedPec != null)
+                          buildChoiceChipsWrap(
+                            label: 'Cluster',
+                            selectedValue: _selectedCluster,
+                            items: pecClusters[_selectedPec!]!,
+                            onChanged: (value) => _selectedCluster = value,
+                          ),
+                        if (_selectedCluster == 'RIP/Camp') ...[
+                          const SizedBox(height: 16),
+                          buildTextField(
+                            label: 'Place',
+                            controller: _placeController,
+                            icon: Icons.location_on,
+                          ),
+                        ],
+                      ],
                     ),
-                  ],
-                  const SizedBox(height: 12),
-                  buildTextField(
-                    label: 'Phone',
-                    controller: _phoneController,
-                    keyboardType: TextInputType.phone,
-                    icon: Icons.phone,
-                    customValidator: (value) {
-                      final trimmed = value?.trim() ?? '';
-                      if (trimmed.length != 10) {
-                        return 'Phone number must be exactly 10 digits';
-                      }
-                      if (!RegExp(r'^[789]\d{9}$').hasMatch(trimmed)) {
-                        return 'Phone number must start with 7, 8, or 9';
-                      }
-                      return null;
-                    },
+                  ),
+                  buildSectionCard(
+                    title: 'Patient Details',
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        buildTextField(
+                          label: 'OPD Number',
+                          controller: _opdController,
+                          keyboardType: TextInputType.number,
+                          min: 0,
+                          max: 99999999,
+                          icon: Icons.confirmation_number,
+                        ),
+                        const SizedBox(height: 12),
+                        buildTextField(
+                          label: 'Name',
+                          controller: _nameController,
+                          icon: Icons.person,
+                        ),
+                        const SizedBox(height: 12),
+                        buildTextField(
+                          label: 'Age',
+                          controller: _ageController,
+                          keyboardType: TextInputType.number,
+                          min: 0,
+                          max: 100,
+                          icon: Icons.cake,
+                        ),
+                        const SizedBox(height: 12),
+                        buildChoiceChipsRow(
+                          label: 'Gender',
+                          selectedValue: _selectedSex,
+                          items: ['Male', 'Female', 'Other'],
+                          onChanged: (value) => _selectedSex = value,
+                        ),
+                        const SizedBox(height: 12),
+                        buildChoiceChipsWrap(
+                          label: 'Patient registration type',
+                          selectedValue: _selectedNo,
+                          items: ['New', 'Old'],
+                          onChanged: (value) => _selectedNo = value,
+                        ),
+                        if (showChwField) ...[
+                          const SizedBox(height: 12),
+                          buildChoiceChipsWrap(
+                            label: 'How do you know about PEC?',
+                            selectedValue: _selectedChw,
+                            items: ['Self', 'ASHA/Volunteer', 'Other'],
+                            onChanged: (value) => _selectedChw = value,
+                          ),
+                        ],
+                        const SizedBox(height: 12),
+                        buildTextField(
+                          label: 'Phone',
+                          controller: _phoneController,
+                          keyboardType: TextInputType.phone,
+                          icon: Icons.phone,
+                          customValidator: (value) {
+                            final trimmed = value?.trim() ?? '';
+                            if (trimmed.length != 10) {
+                              return 'Phone number must be exactly 10 digits';
+                            }
+                            if (!RegExp(r'^[789]\d{9}$').hasMatch(trimmed)) {
+                              return 'Phone number must start with 7, 8, or 9';
+                            }
+                            return null;
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    height: 50,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.teal.shade700,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      icon: const Icon(Icons.arrow_forward_ios, size: 18),
+                      label: const Text('Next', style: TextStyle(fontSize: 18)),
+                      onPressed: _goToNextPage,
+                    ),
                   ),
                 ],
               ),
             ),
-
-            const SizedBox(height: 16),
-            SizedBox(
-              height: 50,
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blueAccent,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-                icon: const Icon(Icons.arrow_forward_ios, size: 18),
-                label: const Text('Next', style: TextStyle(fontSize: 18)),
-                onPressed: _goToNextPage,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
