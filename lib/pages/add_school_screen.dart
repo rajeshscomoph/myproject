@@ -59,14 +59,14 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
       fillColor: const Color(0xFFE0F2F1),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(10),
         borderSide: const BorderSide(color: Color(0xFF26A69A), width: 2),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
         borderSide: const BorderSide(color: Color(0xFF80CBC4), width: 1),
       ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
     );
   }
 
@@ -78,15 +78,15 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Add School')),
       body: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
         child: Card(
           color: cardColor,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(12),
           ),
           elevation: 6,
           child: Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(12),
             child: Form(
               key: _formKey,
               child: ListView(

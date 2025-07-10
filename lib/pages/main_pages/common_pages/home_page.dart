@@ -14,10 +14,17 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Define colors
+    const primaryColor = Color(0xFF26A69A);
+    const accentColor = Color(0xFF00796B);
+    const backgroundColor = Color(0xFFE0F2F1);
+    const cardColor = Color(0xFFB2DFDB);
+
     return Scaffold(
+      backgroundColor: backgroundColor,
       appBar: AppBar(
         title: const Text('Home'),
-        backgroundColor: Colors.blueAccent,
+        backgroundColor: primaryColor,
         centerTitle: true,
       ),
       body: SafeArea(
@@ -45,7 +52,7 @@ class HomePage extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Colors.blueAccent,
+                  color: accentColor,
                 ),
               ),
             ),
@@ -60,17 +67,24 @@ class HomePage extends StatelessWidget {
 
             // School dropdown
             Card(
+              color: cardColor,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
-              elevation: 2,
+              elevation: 3,
               margin: const EdgeInsets.symmetric(vertical: 8),
               child: ExpansionTile(
-                leading: const Icon(Icons.school, color: Colors.blueAccent),
-                title: const Text('School Screening Program'),
+                leading: const Icon(Icons.school, color: accentColor),
+                title: const Text(
+                  'School Screening Program',
+                  style: TextStyle(
+                    color: accentColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 children: [
                   ListTile(
-                    leading: const Icon(Icons.add, color: Colors.blueAccent),
+                    leading: const Icon(Icons.add, color: primaryColor),
                     title: const Text('Add School'),
                     onTap: () {
                       Navigator.push(
@@ -83,7 +97,7 @@ class HomePage extends StatelessWidget {
                     },
                   ),
                   ListTile(
-                    leading: const Icon(Icons.list, color: Colors.blueAccent),
+                    leading: const Icon(Icons.list, color: primaryColor),
                     title: const Text('View Schools'),
                     onTap: () {
                       Navigator.push(
@@ -100,20 +114,24 @@ class HomePage extends StatelessWidget {
 
             // App Settings & Info dropdown
             Card(
+              color: cardColor,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
-              elevation: 2,
+              elevation: 3,
               margin: const EdgeInsets.symmetric(vertical: 8),
               child: ExpansionTile(
-                leading: const Icon(Icons.settings, color: Colors.blueAccent),
-                title: const Text('App Settings & Info'),
+                leading: const Icon(Icons.settings, color: accentColor),
+                title: const Text(
+                  'App Settings & Info',
+                  style: TextStyle(
+                    color: accentColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 children: [
                   ListTile(
-                    leading: const Icon(
-                      Icons.settings,
-                      color: Colors.blueAccent,
-                    ),
+                    leading: const Icon(Icons.settings, color: primaryColor),
                     title: const Text('Settings'),
                     onTap: () {
                       Navigator.push(
@@ -123,10 +141,7 @@ class HomePage extends StatelessWidget {
                     },
                   ),
                   ListTile(
-                    leading: const Icon(
-                      Icons.privacy_tip,
-                      color: Colors.blueAccent,
-                    ),
+                    leading: const Icon(Icons.privacy_tip, color: primaryColor),
                     title: const Text('Privacy Policy'),
                     onTap: () {
                       Navigator.push(
@@ -136,7 +151,7 @@ class HomePage extends StatelessWidget {
                     },
                   ),
                   ListTile(
-                    leading: const Icon(Icons.info, color: Colors.blueAccent),
+                    leading: const Icon(Icons.info, color: primaryColor),
                     title: const Text('About Us'),
                     onTap: () {
                       Navigator.push(
@@ -146,10 +161,7 @@ class HomePage extends StatelessWidget {
                     },
                   ),
                   ListTile(
-                    leading: const Icon(
-                      Icons.description,
-                      color: Colors.blueAccent,
-                    ),
+                    leading: const Icon(Icons.description, color: primaryColor),
                     title: const Text('Terms and Conditions'),
                     onTap: () {
                       Navigator.push(
