@@ -58,20 +58,26 @@ class _CustomDropdownAttachedState extends State<CustomDropdownAttached> {
               child: Material(
                 elevation: 4,
                 borderRadius: BorderRadius.circular(8),
-                child: ListView(
-                  padding: EdgeInsets.zero,
-                  shrinkWrap: true,
-                  children: widget.items
-                      .map(
-                        (item) => ListTile(
-                          title: Text(item),
-                          onTap: () {
-                            widget.onChanged(item);
-                            _removeOverlay();
-                          },
-                        ),
-                      )
-                      .toList(),
+                child: SizedBox(
+                  // Assuming each ListTile is about 56 pixels high (default)
+                  height:
+                      (widget.items.length > 4 ? 4 : widget.items.length) *
+                      56.0,
+                  child: ListView(
+                    padding: EdgeInsets.zero,
+                    shrinkWrap: true,
+                    children: widget.items
+                        .map(
+                          (item) => ListTile(
+                            title: Text(item),
+                            onTap: () {
+                              widget.onChanged(item);
+                              _removeOverlay();
+                            },
+                          ),
+                        )
+                        .toList(),
+                  ),
                 ),
               ),
             ),

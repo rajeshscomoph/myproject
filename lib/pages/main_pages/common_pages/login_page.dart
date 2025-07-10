@@ -33,7 +33,7 @@ class _LoginPageState extends State<LoginPage> {
     try {
        Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const HomePage()),
+        MaterialPageRoute(builder: (_) => HomePage()),
       );
 
       // final url = Uri.parse(

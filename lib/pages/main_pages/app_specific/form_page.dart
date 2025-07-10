@@ -1,29 +1,28 @@
 import 'package:flutter/material.dart';
-import 'package:myproject/components/PEC/primary_eye_care_component.dart';
+import 'package:myproject/components/PEC/primary_eye_care_first_page.dart';
 
-class FormPage extends StatefulWidget {
-  const FormPage({super.key});
+class FormPage extends StatelessWidget {
+  final String title;
+  final Widget? child; // optional child widget
 
-  @override
-  State<FormPage> createState() => _FormPageState();
-}
+  const FormPage({
+    super.key,
+    this.title = 'Primary Eye Care Services',
+    this.child,
+  });
 
-class _FormPageState extends State<FormPage> {
-  final _formKey = GlobalKey<FormState>();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Primary Eye Care Services'),
+        title: Text(title),
         backgroundColor: Colors.blueAccent,
         centerTitle: true,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: PrimaryEyeCareComponent(),
-        ),
+        // Use passed child if provided, else show default PrimaryEyeCareFirstPage
+        child: child ?? const PrimaryEyeCareFirstPage(),
       ),
     );
   }

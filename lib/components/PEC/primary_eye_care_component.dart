@@ -39,20 +39,20 @@ class _PrimaryEyeCareComponentState extends State<PrimaryEyeCareComponent> {
   final Map<String, List<String>> pecClusters = {
     'PEC-1': ['17-Trilokpuri'],
     'PEC-2': [
-      '44-Dharuhera',
-      '25-Mehrauli',
       '13-Nangli',
+      '25-Mehrauli',
       '31-Jaunapur',
       '32-Fatehpur Beri',
+      '44-Dharuhera',
       '49-Sarai Kale Khan',
     ],
     'PEC-3': [
-      '16-Jatkhor',
-      '50-Sohna',
-      '34-Tauru',
-      '46-Patel Garden',
-      '43-Janak puri',
       '4-Sanjay Colony',
+      '16-Jatkhor',
+      '34-Tauru',
+      '43-Janak puri',
+      '46-Patel Garden',
+      '50-Sohna',
     ],
     'PEC-4': [
       '36-Nangal Raya',
@@ -138,6 +138,8 @@ GlucomaSusLE: $_selectedGlucomaSusLE
     required String label,
     required TextEditingController controller,
     TextInputType? keyboardType,
+    int? min,
+    int? max,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -156,6 +158,13 @@ GlucomaSusLE: $_selectedGlucomaSusLE
           validator: (value) {
             if (value == null || value.trim().isEmpty) {
               return 'Please enter $label';
+            }
+            if (min != null && max != null) {
+              final number = int.tryParse(value.trim());
+              if (number == null) return '$label must be a number';
+              if (number < min || number > max) {
+                return '$label must be between $min and $max';
+              }
             }
             return null;
           },
@@ -241,9 +250,7 @@ GlucomaSusLE: $_selectedGlucomaSusLE
           buildDropdown(
             label: 'Cluster',
             selectedValue: _selectedCluster,
-            items: _selectedPec != null
-                ? pecClusters[_selectedPec]!
-                : <String>[],
+            items: _selectedPec != null ? pecClusters[_selectedPec]! : [],
             onChanged: (value) => setState(() => _selectedCluster = value),
           ),
           const SizedBox(height: 16),
@@ -257,6 +264,8 @@ GlucomaSusLE: $_selectedGlucomaSusLE
             label: 'OPD Number',
             controller: _opdController,
             keyboardType: TextInputType.number,
+            min: 099999,
+            max: 99999999,
           ),
           const SizedBox(height: 16),
 
@@ -267,6 +276,8 @@ GlucomaSusLE: $_selectedGlucomaSusLE
             label: 'Age',
             controller: _ageController,
             keyboardType: TextInputType.number,
+            min: 0,
+            max: 99,
           ),
           const SizedBox(height: 16),
 
@@ -290,6 +301,8 @@ GlucomaSusLE: $_selectedGlucomaSusLE
             label: 'Phone',
             controller: _phoneController,
             keyboardType: TextInputType.phone,
+            min: 999999999,
+            max: 9999999999,
           ),
           const SizedBox(height: 16),
 
@@ -325,12 +338,16 @@ GlucomaSusLE: $_selectedGlucomaSusLE
                 label: 'IOP_RE',
                 controller: _iopReController,
                 keyboardType: TextInputType.number,
+                min: 0,
+                max: 100,
               ),
               const SizedBox(height: 16),
               buildTextField(
                 label: 'IOP_LE',
                 controller: _iopLeController,
                 keyboardType: TextInputType.number,
+                min: 0,
+                max: 100,
               ),
               const SizedBox(height: 16),
             ],
