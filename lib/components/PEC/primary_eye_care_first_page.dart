@@ -107,7 +107,7 @@ class _PrimaryEyeCareFirstPageState extends State<PrimaryEyeCareFirstPage>
     return Card(
       color: Colors.teal.shade50,
       elevation: 3,
-      shadowColor: Colors.teal.withOpacity(0.2),
+      shadowColor: Colors.teal.withValues(),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       margin: const EdgeInsets.only(bottom: 20),
       child: Padding(
