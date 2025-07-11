@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:myproject/models/school.dart';
 import 'package:myproject/services/DB/school.dart';
+import 'school_detail_screen.dart';
 
 class ViewSchoolsScreen extends StatelessWidget {
   final AppDatabase db;
@@ -10,7 +12,7 @@ class ViewSchoolsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Saved Schools')),
-      body: FutureBuilder(
+      body: FutureBuilder<List<School>>(
         future: db.getAllSchools(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -33,6 +35,14 @@ class ViewSchoolsScreen extends StatelessWidget {
                     'Principal: ${s.principalName}\nPhone: ${s.phone1}',
                   ),
                   trailing: Text('Code: ${s.schoolCode}'),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => SchoolDetailScreen(school: s),
+                      ),
+                    );
+                  },
                 ),
               );
             },

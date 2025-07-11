@@ -42,6 +42,8 @@ dependencies:
   sqlite3_flutter_libs: ^0.5.34
   drift_dev: ^2.27.0
   build_runner: ^2.5.4
+  responsive_sizer: ^3.3.1
+  sqflite: ^2.4.2
 
 dev_dependencies:
   flutter_test:

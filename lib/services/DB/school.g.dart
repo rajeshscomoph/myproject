@@ -3,28 +3,18 @@
 part of 'school.dart';
 
 // ignore_for_file: type=lint
-class $SchoolsTable extends Schools with TableInfo<$SchoolsTable, School> {
+class $SchoolsInformationTable extends SchoolsInformation
+    with TableInfo<$SchoolsInformationTable, SchoolsInformationData> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
-  $SchoolsTable(this.attachedDatabase, [this._alias]);
+  $SchoolsInformationTable(this.attachedDatabase, [this._alias]);
   static const VerificationMeta _schoolNameMeta = const VerificationMeta(
     'schoolName',
   );
   @override
   late final GeneratedColumn<String> schoolName = GeneratedColumn<String>(
     'school_name',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _schoolSNMeta = const VerificationMeta(
-    'schoolSN',
-  );
-  @override
-  late final GeneratedColumn<String> schoolSN = GeneratedColumn<String>(
-    'school_s_n',
     aliasedName,
     false,
     type: DriftSqlType.string,
@@ -73,23 +63,47 @@ class $SchoolsTable extends Schools with TableInfo<$SchoolsTable, School> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _classesJsonMeta = const VerificationMeta(
+    'classesJson',
+  );
+  @override
+  late final GeneratedColumn<String> classesJson = GeneratedColumn<String>(
+    'classes_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _classSectionsJsonMeta = const VerificationMeta(
+    'classSectionsJson',
+  );
+  @override
+  late final GeneratedColumn<String> classSectionsJson =
+      GeneratedColumn<String>(
+        'class_sections_json',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     schoolName,
-    schoolSN,
     schoolCode,
     schoolType,
     principalName,
     phone1,
+    classesJson,
+    classSectionsJson,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
-  static const String $name = 'schools';
+  static const String $name = 'schools_information';
   @override
   VerificationContext validateIntegrity(
-    Insertable<School> instance, {
+    Insertable<SchoolsInformationData> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
@@ -101,14 +115,6 @@ class $SchoolsTable extends Schools with TableInfo<$SchoolsTable, School> {
       );
     } else if (isInserting) {
       context.missing(_schoolNameMeta);
-    }
-    if (data.containsKey('school_s_n')) {
-      context.handle(
-        _schoolSNMeta,
-        schoolSN.isAcceptableOrUnknown(data['school_s_n']!, _schoolSNMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_schoolSNMeta);
     }
     if (data.containsKey('school_code')) {
       context.handle(
@@ -143,22 +149,36 @@ class $SchoolsTable extends Schools with TableInfo<$SchoolsTable, School> {
     } else if (isInserting) {
       context.missing(_phone1Meta);
     }
+    if (data.containsKey('classes_json')) {
+      context.handle(
+        _classesJsonMeta,
+        classesJson.isAcceptableOrUnknown(
+          data['classes_json']!,
+          _classesJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('class_sections_json')) {
+      context.handle(
+        _classSectionsJsonMeta,
+        classSectionsJson.isAcceptableOrUnknown(
+          data['class_sections_json']!,
+          _classSectionsJsonMeta,
+        ),
+      );
+    }
     return context;
   }
 
   @override
   Set<GeneratedColumn> get $primaryKey => {schoolCode};
   @override
-  School map(Map<String, dynamic> data, {String? tablePrefix}) {
+  SchoolsInformationData map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return School(
+    return SchoolsInformationData(
       schoolName: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}school_name'],
-      )!,
-      schoolSN: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}school_s_n'],
       )!,
       schoolCode: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
@@ -176,65 +196,89 @@ class $SchoolsTable extends Schools with TableInfo<$SchoolsTable, School> {
         DriftSqlType.string,
         data['${effectivePrefix}phone1'],
       )!,
+      classesJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}classes_json'],
+      ),
+      classSectionsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}class_sections_json'],
+      ),
     );
   }
 
   @override
-  $SchoolsTable createAlias(String alias) {
-    return $SchoolsTable(attachedDatabase, alias);
+  $SchoolsInformationTable createAlias(String alias) {
+    return $SchoolsInformationTable(attachedDatabase, alias);
   }
 }
 
-class School extends DataClass implements Insertable<School> {
+class SchoolsInformationData extends DataClass
+    implements Insertable<SchoolsInformationData> {
   final String schoolName;
-  final String schoolSN;
   final int schoolCode;
   final String schoolType;
   final String principalName;
   final String phone1;
-  const School({
+  final String? classesJson;
+  final String? classSectionsJson;
+  const SchoolsInformationData({
     required this.schoolName,
-    required this.schoolSN,
     required this.schoolCode,
     required this.schoolType,
     required this.principalName,
     required this.phone1,
+    this.classesJson,
+    this.classSectionsJson,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['school_name'] = Variable<String>(schoolName);
-    map['school_s_n'] = Variable<String>(schoolSN);
     map['school_code'] = Variable<int>(schoolCode);
     map['school_type'] = Variable<String>(schoolType);
     map['principal_name'] = Variable<String>(principalName);
     map['phone1'] = Variable<String>(phone1);
+    if (!nullToAbsent || classesJson != null) {
+      map['classes_json'] = Variable<String>(classesJson);
+    }
+    if (!nullToAbsent || classSectionsJson != null) {
+      map['class_sections_json'] = Variable<String>(classSectionsJson);
+    }
     return map;
   }
 
-  SchoolsCompanion toCompanion(bool nullToAbsent) {
-    return SchoolsCompanion(
+  SchoolsInformationCompanion toCompanion(bool nullToAbsent) {
+    return SchoolsInformationCompanion(
       schoolName: Value(schoolName),
-      schoolSN: Value(schoolSN),
       schoolCode: Value(schoolCode),
       schoolType: Value(schoolType),
       principalName: Value(principalName),
       phone1: Value(phone1),
+      classesJson: classesJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(classesJson),
+      classSectionsJson: classSectionsJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(classSectionsJson),
     );
   }
 
-  factory School.fromJson(
+  factory SchoolsInformationData.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return School(
+    return SchoolsInformationData(
       schoolName: serializer.fromJson<String>(json['schoolName']),
-      schoolSN: serializer.fromJson<String>(json['schoolSN']),
       schoolCode: serializer.fromJson<int>(json['schoolCode']),
       schoolType: serializer.fromJson<String>(json['schoolType']),
       principalName: serializer.fromJson<String>(json['principalName']),
       phone1: serializer.fromJson<String>(json['phone1']),
+      classesJson: serializer.fromJson<String?>(json['classesJson']),
+      classSectionsJson: serializer.fromJson<String?>(
+        json['classSectionsJson'],
+      ),
     );
   }
   @override
@@ -242,35 +286,39 @@ class School extends DataClass implements Insertable<School> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'schoolName': serializer.toJson<String>(schoolName),
-      'schoolSN': serializer.toJson<String>(schoolSN),
       'schoolCode': serializer.toJson<int>(schoolCode),
       'schoolType': serializer.toJson<String>(schoolType),
       'principalName': serializer.toJson<String>(principalName),
       'phone1': serializer.toJson<String>(phone1),
+      'classesJson': serializer.toJson<String?>(classesJson),
+      'classSectionsJson': serializer.toJson<String?>(classSectionsJson),
     };
   }
 
-  School copyWith({
+  SchoolsInformationData copyWith({
     String? schoolName,
-    String? schoolSN,
     int? schoolCode,
     String? schoolType,
     String? principalName,
     String? phone1,
-  }) => School(
+    Value<String?> classesJson = const Value.absent(),
+    Value<String?> classSectionsJson = const Value.absent(),
+  }) => SchoolsInformationData(
     schoolName: schoolName ?? this.schoolName,
-    schoolSN: schoolSN ?? this.schoolSN,
     schoolCode: schoolCode ?? this.schoolCode,
     schoolType: schoolType ?? this.schoolType,
     principalName: principalName ?? this.principalName,
     phone1: phone1 ?? this.phone1,
+    classesJson: classesJson.present ? classesJson.value : this.classesJson,
+    classSectionsJson: classSectionsJson.present
+        ? classSectionsJson.value
+        : this.classSectionsJson,
   );
-  School copyWithCompanion(SchoolsCompanion data) {
-    return School(
+  SchoolsInformationData copyWithCompanion(SchoolsInformationCompanion data) {
+    return SchoolsInformationData(
       schoolName: data.schoolName.present
           ? data.schoolName.value
           : this.schoolName,
-      schoolSN: data.schoolSN.present ? data.schoolSN.value : this.schoolSN,
       schoolCode: data.schoolCode.present
           ? data.schoolCode.value
           : this.schoolCode,
@@ -281,18 +329,25 @@ class School extends DataClass implements Insertable<School> {
           ? data.principalName.value
           : this.principalName,
       phone1: data.phone1.present ? data.phone1.value : this.phone1,
+      classesJson: data.classesJson.present
+          ? data.classesJson.value
+          : this.classesJson,
+      classSectionsJson: data.classSectionsJson.present
+          ? data.classSectionsJson.value
+          : this.classSectionsJson,
     );
   }
 
   @override
   String toString() {
-    return (StringBuffer('School(')
+    return (StringBuffer('SchoolsInformationData(')
           ..write('schoolName: $schoolName, ')
-          ..write('schoolSN: $schoolSN, ')
           ..write('schoolCode: $schoolCode, ')
           ..write('schoolType: $schoolType, ')
           ..write('principalName: $principalName, ')
-          ..write('phone1: $phone1')
+          ..write('phone1: $phone1, ')
+          ..write('classesJson: $classesJson, ')
+          ..write('classSectionsJson: $classSectionsJson')
           ..write(')'))
         .toString();
   }
@@ -300,84 +355,93 @@ class School extends DataClass implements Insertable<School> {
   @override
   int get hashCode => Object.hash(
     schoolName,
-    schoolSN,
     schoolCode,
     schoolType,
     principalName,
     phone1,
+    classesJson,
+    classSectionsJson,
   );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is School &&
+      (other is SchoolsInformationData &&
           other.schoolName == this.schoolName &&
-          other.schoolSN == this.schoolSN &&
           other.schoolCode == this.schoolCode &&
           other.schoolType == this.schoolType &&
           other.principalName == this.principalName &&
-          other.phone1 == this.phone1);
+          other.phone1 == this.phone1 &&
+          other.classesJson == this.classesJson &&
+          other.classSectionsJson == this.classSectionsJson);
 }
 
-class SchoolsCompanion extends UpdateCompanion<School> {
+class SchoolsInformationCompanion
+    extends UpdateCompanion<SchoolsInformationData> {
   final Value<String> schoolName;
-  final Value<String> schoolSN;
   final Value<int> schoolCode;
   final Value<String> schoolType;
   final Value<String> principalName;
   final Value<String> phone1;
-  const SchoolsCompanion({
+  final Value<String?> classesJson;
+  final Value<String?> classSectionsJson;
+  const SchoolsInformationCompanion({
     this.schoolName = const Value.absent(),
-    this.schoolSN = const Value.absent(),
     this.schoolCode = const Value.absent(),
     this.schoolType = const Value.absent(),
     this.principalName = const Value.absent(),
     this.phone1 = const Value.absent(),
+    this.classesJson = const Value.absent(),
+    this.classSectionsJson = const Value.absent(),
   });
-  SchoolsCompanion.insert({
+  SchoolsInformationCompanion.insert({
     required String schoolName,
-    required String schoolSN,
     this.schoolCode = const Value.absent(),
     required String schoolType,
     required String principalName,
     required String phone1,
+    this.classesJson = const Value.absent(),
+    this.classSectionsJson = const Value.absent(),
   }) : schoolName = Value(schoolName),
-       schoolSN = Value(schoolSN),
        schoolType = Value(schoolType),
        principalName = Value(principalName),
        phone1 = Value(phone1);
-  static Insertable<School> custom({
+  static Insertable<SchoolsInformationData> custom({
     Expression<String>? schoolName,
-    Expression<String>? schoolSN,
     Expression<int>? schoolCode,
     Expression<String>? schoolType,
     Expression<String>? principalName,
     Expression<String>? phone1,
+    Expression<String>? classesJson,
+    Expression<String>? classSectionsJson,
   }) {
     return RawValuesInsertable({
       if (schoolName != null) 'school_name': schoolName,
-      if (schoolSN != null) 'school_s_n': schoolSN,
       if (schoolCode != null) 'school_code': schoolCode,
       if (schoolType != null) 'school_type': schoolType,
       if (principalName != null) 'principal_name': principalName,
       if (phone1 != null) 'phone1': phone1,
+      if (classesJson != null) 'classes_json': classesJson,
+      if (classSectionsJson != null) 'class_sections_json': classSectionsJson,
     });
   }
 
-  SchoolsCompanion copyWith({
+  SchoolsInformationCompanion copyWith({
     Value<String>? schoolName,
-    Value<String>? schoolSN,
     Value<int>? schoolCode,
     Value<String>? schoolType,
     Value<String>? principalName,
     Value<String>? phone1,
+    Value<String?>? classesJson,
+    Value<String?>? classSectionsJson,
   }) {
-    return SchoolsCompanion(
+    return SchoolsInformationCompanion(
       schoolName: schoolName ?? this.schoolName,
-      schoolSN: schoolSN ?? this.schoolSN,
       schoolCode: schoolCode ?? this.schoolCode,
       schoolType: schoolType ?? this.schoolType,
       principalName: principalName ?? this.principalName,
       phone1: phone1 ?? this.phone1,
+      classesJson: classesJson ?? this.classesJson,
+      classSectionsJson: classSectionsJson ?? this.classSectionsJson,
     );
   }
 
@@ -386,9 +450,6 @@ class SchoolsCompanion extends UpdateCompanion<School> {
     final map = <String, Expression>{};
     if (schoolName.present) {
       map['school_name'] = Variable<String>(schoolName.value);
-    }
-    if (schoolSN.present) {
-      map['school_s_n'] = Variable<String>(schoolSN.value);
     }
     if (schoolCode.present) {
       map['school_code'] = Variable<int>(schoolCode.value);
@@ -402,18 +463,25 @@ class SchoolsCompanion extends UpdateCompanion<School> {
     if (phone1.present) {
       map['phone1'] = Variable<String>(phone1.value);
     }
+    if (classesJson.present) {
+      map['classes_json'] = Variable<String>(classesJson.value);
+    }
+    if (classSectionsJson.present) {
+      map['class_sections_json'] = Variable<String>(classSectionsJson.value);
+    }
     return map;
   }
 
   @override
   String toString() {
-    return (StringBuffer('SchoolsCompanion(')
+    return (StringBuffer('SchoolsInformationCompanion(')
           ..write('schoolName: $schoolName, ')
-          ..write('schoolSN: $schoolSN, ')
           ..write('schoolCode: $schoolCode, ')
           ..write('schoolType: $schoolType, ')
           ..write('principalName: $principalName, ')
-          ..write('phone1: $phone1')
+          ..write('phone1: $phone1, ')
+          ..write('classesJson: $classesJson, ')
+          ..write('classSectionsJson: $classSectionsJson')
           ..write(')'))
         .toString();
   }
@@ -422,36 +490,39 @@ class SchoolsCompanion extends UpdateCompanion<School> {
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
-  late final $SchoolsTable schools = $SchoolsTable(this);
+  late final $SchoolsInformationTable schoolsInformation =
+      $SchoolsInformationTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities => [schools];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [schoolsInformation];
 }
 
-typedef $$SchoolsTableCreateCompanionBuilder =
-    SchoolsCompanion Function({
+typedef $$SchoolsInformationTableCreateCompanionBuilder =
+    SchoolsInformationCompanion Function({
       required String schoolName,
-      required String schoolSN,
       Value<int> schoolCode,
       required String schoolType,
       required String principalName,
       required String phone1,
+      Value<String?> classesJson,
+      Value<String?> classSectionsJson,
     });
-typedef $$SchoolsTableUpdateCompanionBuilder =
-    SchoolsCompanion Function({
+typedef $$SchoolsInformationTableUpdateCompanionBuilder =
+    SchoolsInformationCompanion Function({
       Value<String> schoolName,
-      Value<String> schoolSN,
       Value<int> schoolCode,
       Value<String> schoolType,
       Value<String> principalName,
       Value<String> phone1,
+      Value<String?> classesJson,
+      Value<String?> classSectionsJson,
     });
 
-class $$SchoolsTableFilterComposer
-    extends Composer<_$AppDatabase, $SchoolsTable> {
-  $$SchoolsTableFilterComposer({
+class $$SchoolsInformationTableFilterComposer
+    extends Composer<_$AppDatabase, $SchoolsInformationTable> {
+  $$SchoolsInformationTableFilterComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -460,11 +531,6 @@ class $$SchoolsTableFilterComposer
   });
   ColumnFilters<String> get schoolName => $composableBuilder(
     column: $table.schoolName,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get schoolSN => $composableBuilder(
-    column: $table.schoolSN,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -487,11 +553,21 @@ class $$SchoolsTableFilterComposer
     column: $table.phone1,
     builder: (column) => ColumnFilters(column),
   );
+
+  ColumnFilters<String> get classesJson => $composableBuilder(
+    column: $table.classesJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get classSectionsJson => $composableBuilder(
+    column: $table.classSectionsJson,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
-class $$SchoolsTableOrderingComposer
-    extends Composer<_$AppDatabase, $SchoolsTable> {
-  $$SchoolsTableOrderingComposer({
+class $$SchoolsInformationTableOrderingComposer
+    extends Composer<_$AppDatabase, $SchoolsInformationTable> {
+  $$SchoolsInformationTableOrderingComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -500,11 +576,6 @@ class $$SchoolsTableOrderingComposer
   });
   ColumnOrderings<String> get schoolName => $composableBuilder(
     column: $table.schoolName,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get schoolSN => $composableBuilder(
-    column: $table.schoolSN,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -527,11 +598,21 @@ class $$SchoolsTableOrderingComposer
     column: $table.phone1,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get classesJson => $composableBuilder(
+    column: $table.classesJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get classSectionsJson => $composableBuilder(
+    column: $table.classSectionsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
-class $$SchoolsTableAnnotationComposer
-    extends Composer<_$AppDatabase, $SchoolsTable> {
-  $$SchoolsTableAnnotationComposer({
+class $$SchoolsInformationTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SchoolsInformationTable> {
+  $$SchoolsInformationTableAnnotationComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -542,9 +623,6 @@ class $$SchoolsTableAnnotationComposer
     column: $table.schoolName,
     builder: (column) => column,
   );
-
-  GeneratedColumn<String> get schoolSN =>
-      $composableBuilder(column: $table.schoolSN, builder: (column) => column);
 
   GeneratedColumn<int> get schoolCode => $composableBuilder(
     column: $table.schoolCode,
@@ -563,65 +641,91 @@ class $$SchoolsTableAnnotationComposer
 
   GeneratedColumn<String> get phone1 =>
       $composableBuilder(column: $table.phone1, builder: (column) => column);
+
+  GeneratedColumn<String> get classesJson => $composableBuilder(
+    column: $table.classesJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get classSectionsJson => $composableBuilder(
+    column: $table.classSectionsJson,
+    builder: (column) => column,
+  );
 }
 
-class $$SchoolsTableTableManager
+class $$SchoolsInformationTableTableManager
     extends
         RootTableManager<
           _$AppDatabase,
-          $SchoolsTable,
-          School,
-          $$SchoolsTableFilterComposer,
-          $$SchoolsTableOrderingComposer,
-          $$SchoolsTableAnnotationComposer,
-          $$SchoolsTableCreateCompanionBuilder,
-          $$SchoolsTableUpdateCompanionBuilder,
-          (School, BaseReferences<_$AppDatabase, $SchoolsTable, School>),
-          School,
+          $SchoolsInformationTable,
+          SchoolsInformationData,
+          $$SchoolsInformationTableFilterComposer,
+          $$SchoolsInformationTableOrderingComposer,
+          $$SchoolsInformationTableAnnotationComposer,
+          $$SchoolsInformationTableCreateCompanionBuilder,
+          $$SchoolsInformationTableUpdateCompanionBuilder,
+          (
+            SchoolsInformationData,
+            BaseReferences<
+              _$AppDatabase,
+              $SchoolsInformationTable,
+              SchoolsInformationData
+            >,
+          ),
+          SchoolsInformationData,
           PrefetchHooks Function()
         > {
-  $$SchoolsTableTableManager(_$AppDatabase db, $SchoolsTable table)
-    : super(
+  $$SchoolsInformationTableTableManager(
+    _$AppDatabase db,
+    $SchoolsInformationTable table,
+  ) : super(
         TableManagerState(
           db: db,
           table: table,
           createFilteringComposer: () =>
-              $$SchoolsTableFilterComposer($db: db, $table: table),
+              $$SchoolsInformationTableFilterComposer($db: db, $table: table),
           createOrderingComposer: () =>
-              $$SchoolsTableOrderingComposer($db: db, $table: table),
+              $$SchoolsInformationTableOrderingComposer($db: db, $table: table),
           createComputedFieldComposer: () =>
-              $$SchoolsTableAnnotationComposer($db: db, $table: table),
+              $$SchoolsInformationTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
           updateCompanionCallback:
               ({
                 Value<String> schoolName = const Value.absent(),
-                Value<String> schoolSN = const Value.absent(),
                 Value<int> schoolCode = const Value.absent(),
                 Value<String> schoolType = const Value.absent(),
                 Value<String> principalName = const Value.absent(),
                 Value<String> phone1 = const Value.absent(),
-              }) => SchoolsCompanion(
+                Value<String?> classesJson = const Value.absent(),
+                Value<String?> classSectionsJson = const Value.absent(),
+              }) => SchoolsInformationCompanion(
                 schoolName: schoolName,
-                schoolSN: schoolSN,
                 schoolCode: schoolCode,
                 schoolType: schoolType,
                 principalName: principalName,
                 phone1: phone1,
+                classesJson: classesJson,
+                classSectionsJson: classSectionsJson,
               ),
           createCompanionCallback:
               ({
                 required String schoolName,
-                required String schoolSN,
                 Value<int> schoolCode = const Value.absent(),
                 required String schoolType,
                 required String principalName,
                 required String phone1,
-              }) => SchoolsCompanion.insert(
+                Value<String?> classesJson = const Value.absent(),
+                Value<String?> classSectionsJson = const Value.absent(),
+              }) => SchoolsInformationCompanion.insert(
                 schoolName: schoolName,
-                schoolSN: schoolSN,
                 schoolCode: schoolCode,
                 schoolType: schoolType,
                 principalName: principalName,
                 phone1: phone1,
+                classesJson: classesJson,
+                classSectionsJson: classSectionsJson,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -631,24 +735,31 @@ class $$SchoolsTableTableManager
       );
 }
 
-typedef $$SchoolsTableProcessedTableManager =
+typedef $$SchoolsInformationTableProcessedTableManager =
     ProcessedTableManager<
       _$AppDatabase,
-      $SchoolsTable,
-      School,
-      $$SchoolsTableFilterComposer,
-      $$SchoolsTableOrderingComposer,
-      $$SchoolsTableAnnotationComposer,
-      $$SchoolsTableCreateCompanionBuilder,
-      $$SchoolsTableUpdateCompanionBuilder,
-      (School, BaseReferences<_$AppDatabase, $SchoolsTable, School>),
-      School,
+      $SchoolsInformationTable,
+      SchoolsInformationData,
+      $$SchoolsInformationTableFilterComposer,
+      $$SchoolsInformationTableOrderingComposer,
+      $$SchoolsInformationTableAnnotationComposer,
+      $$SchoolsInformationTableCreateCompanionBuilder,
+      $$SchoolsInformationTableUpdateCompanionBuilder,
+      (
+        SchoolsInformationData,
+        BaseReferences<
+          _$AppDatabase,
+          $SchoolsInformationTable,
+          SchoolsInformationData
+        >,
+      ),
+      SchoolsInformationData,
       PrefetchHooks Function()
     >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
   $AppDatabaseManager(this._db);
-  $$SchoolsTableTableManager get schools =>
-      $$SchoolsTableTableManager(_db, _db.schools);
+  $$SchoolsInformationTableTableManager get schoolsInformation =>
+      $$SchoolsInformationTableTableManager(_db, _db.schoolsInformation);
 }

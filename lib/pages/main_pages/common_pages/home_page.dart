@@ -9,6 +9,8 @@ import '../../utility_pages/terms_page.dart';
 
 class HomePage extends StatelessWidget {
   final db = AppDatabase();
+  final username = "Dr. Sharma";
+
 
   HomePage({super.key});
 
@@ -24,7 +26,7 @@ class HomePage extends StatelessWidget {
       backgroundColor: backgroundColor,
       appBar: AppBar(
         title: const Text('Home'),
-        backgroundColor: primaryColor,
+        backgroundColor: Theme.of(context).primaryColor,
         centerTitle: true,
       ),
       body: SafeArea(
@@ -46,10 +48,10 @@ class HomePage extends StatelessWidget {
             const SizedBox(height: 16),
 
             // Welcome message
-            const Center(
+            Center(
               child: Text(
-                'Welcome, Dr. Sharma!',
-                style: TextStyle(
+                'Welcome, $username!',
+                style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                   color: accentColor,
@@ -57,10 +59,10 @@ class HomePage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            const Center(
+            Center(
               child: Text(
                 'Explore your dashboard below',
-                style: TextStyle(fontSize: 16, color: Colors.black54),
+                style: Theme.of(context).textTheme.bodyMedium,
               ),
             ),
             const SizedBox(height: 32),
@@ -85,7 +87,7 @@ class HomePage extends StatelessWidget {
                 children: [
                   ListTile(
                     leading: const Icon(Icons.add, color: primaryColor),
-                    title: const Text('Add School'),
+                    title: const Text('Add School Information'),
                     onTap: () {
                       Navigator.push(
                         context,

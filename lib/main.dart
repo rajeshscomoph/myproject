@@ -14,8 +14,10 @@ class MyApp extends StatelessWidget {
       title: 'Login Demo',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
+        primaryColor: Color(0xFF26A69A),
         primarySwatch: Colors.blue,
-      ),
+     
+       ),
       home: const LoginPage(),
     );
   }
