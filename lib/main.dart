@@ -1,24 +1,44 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:myproject/app_theme.dart';
 import 'package:myproject/pages/main_pages/common_pages/login_page.dart';
+import 'package:myproject/services/DB/isar_services.dart';
+import 'package:responsive_sizer/responsive_sizer.dart';
 
-void main() {
- runApp(const MyApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Lock orientation
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+
+  // Initialize Isar service
+  final isarService = IsarService();
+
+  runApp(MyApp(isarService: isarService));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final IsarService isarService;
+
+  const MyApp({super.key, required this.isarService});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Login Demo',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primaryColor: Color(0xFF26A69A),
-        primarySwatch: Colors.blue,
-     
-       ),
-      home: const LoginPage(),
+    return ResponsiveSizer(
+      builder: (context, orientation, screenType) {
+        return MaterialApp(
+          title: 'Login Demo',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: ThemeMode.system,
+          // ⬇ Replace LoginPage with HomePage, passing service (or keep LoginPage if you want login first)
+          home: LoginPage(isarService: isarService),
+        );
+      },
     );
   }
 }

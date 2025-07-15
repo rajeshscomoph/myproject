@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:myproject/pages/main_pages/common_pages/forgot_password_page.dart';
 import 'package:myproject/pages/main_pages/common_pages/home_page.dart';
+import 'package:myproject/services/DB/isar_services.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+  final IsarService isarService;
+
+  const LoginPage({super.key,required this.isarService});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -33,7 +36,7 @@ class _LoginPageState extends State<LoginPage> {
     try {
        Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => HomePage()),
+        MaterialPageRoute(builder: (_) => HomePage(isarService: widget.isarService,)),
       );
 
       // final url = Uri.parse(

@@ -1,111 +1,107 @@
 import 'package:flutter/material.dart';
+import 'package:myproject/services/DB/isar_services.dart';
+import 'package:responsive_sizer/responsive_sizer.dart';
 import 'package:myproject/pages/add_school_screen.dart';
 import 'package:myproject/pages/view_schools_screen.dart';
-import 'package:myproject/services/DB/school.dart';
 import '../../utility_pages/settings_page.dart';
 import '../../utility_pages/privacy_page.dart';
 import '../../utility_pages/about_us_page.dart';
 import '../../utility_pages/terms_page.dart';
 
 class HomePage extends StatelessWidget {
-  final db = AppDatabase();
-  final username = "Dr. Sharma";
+  final IsarService isarService;
+  final String username = "Dr. Sharma";
 
-
-  HomePage({super.key});
+  const HomePage({super.key, required this.isarService});
 
   @override
   Widget build(BuildContext context) {
-    // Define colors
-    const primaryColor = Color(0xFF26A69A);
-    const accentColor = Color(0xFF00796B);
-    const backgroundColor = Color(0xFFE0F2F1);
-    const cardColor = Color(0xFFB2DFDB);
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
         title: const Text('Home'),
-        backgroundColor: Theme.of(context).primaryColor,
         centerTitle: true,
+        toolbarHeight: 8.h,
       ),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.all(16.0),
+          padding: EdgeInsets.all(16.sp),
           children: [
+            SizedBox(height: 1.h),
+
             // Logo
             Center(
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(16.sp),
                 child: Image.asset(
                   'assets/logos/logo.jpg',
-                  width: 120,
-                  height: 120,
+                  width: 46.sw,
+                  height: 22.sh,
                   fit: BoxFit.cover,
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+
+            SizedBox(height: 2.h),
 
             // Welcome message
             Center(
               child: Text(
                 'Welcome, $username!',
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: accentColor,
-                ),
+                style: Theme.of(context).textTheme.headlineLarge,
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 1.h),
             Center(
               child: Text(
                 'Explore your dashboard below',
-                style: Theme.of(context).textTheme.bodyMedium,
+                style: Theme.of(context).textTheme.bodyLarge,
               ),
             ),
-            const SizedBox(height: 32),
+            SizedBox(height: 2.h),
 
             // School dropdown
             Card(
-              color: cardColor,
+              color: colorScheme.surface,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(15.sp),
               ),
               elevation: 3,
-              margin: const EdgeInsets.symmetric(vertical: 8),
+              margin: EdgeInsets.symmetric(vertical: 1.h),
               child: ExpansionTile(
-                leading: const Icon(Icons.school, color: accentColor),
-                title: const Text(
+                leading: Icon(Icons.school, color: colorScheme.primary),
+                title: Text(
                   'School Screening Program',
                   style: TextStyle(
-                    color: accentColor,
+                    color: colorScheme.secondary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 children: [
                   ListTile(
-                    leading: const Icon(Icons.add, color: primaryColor),
+                    leading: Icon(Icons.add, color: colorScheme.secondary),
                     title: const Text('Add School Information'),
                     onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (_) =>
-                              AddSchoolScreen(db: db, themeNotifier: null),
+                              AddSchoolScreen(isarService: isarService),
                         ),
                       );
                     },
                   ),
                   ListTile(
-                    leading: const Icon(Icons.list, color: primaryColor),
+                    leading: Icon(Icons.list, color: colorScheme.primary),
                     title: const Text('View Schools'),
                     onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => ViewSchoolsScreen(db: db),
+                          builder: (_) =>
+                              ViewSchoolsScreen(isarService: isarService),
                         ),
                       );
                     },
@@ -116,24 +112,24 @@ class HomePage extends StatelessWidget {
 
             // App Settings & Info dropdown
             Card(
-              color: cardColor,
+              color: colorScheme.surface,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(15.sp),
               ),
               elevation: 3,
-              margin: const EdgeInsets.symmetric(vertical: 8),
+              margin: EdgeInsets.symmetric(vertical: 3.h),
               child: ExpansionTile(
-                leading: const Icon(Icons.settings, color: accentColor),
-                title: const Text(
+                leading: Icon(Icons.settings, color: colorScheme.secondary),
+                title: Text(
                   'App Settings & Info',
                   style: TextStyle(
-                    color: accentColor,
+                    color: colorScheme.secondary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 children: [
                   ListTile(
-                    leading: const Icon(Icons.settings, color: primaryColor),
+                    leading: Icon(Icons.settings, color: colorScheme.primary),
                     title: const Text('Settings'),
                     onTap: () {
                       Navigator.push(
@@ -143,7 +139,10 @@ class HomePage extends StatelessWidget {
                     },
                   ),
                   ListTile(
-                    leading: const Icon(Icons.privacy_tip, color: primaryColor),
+                    leading: Icon(
+                      Icons.privacy_tip,
+                      color: colorScheme.primary,
+                    ),
                     title: const Text('Privacy Policy'),
                     onTap: () {
                       Navigator.push(
@@ -153,7 +152,7 @@ class HomePage extends StatelessWidget {
                     },
                   ),
                   ListTile(
-                    leading: const Icon(Icons.info, color: primaryColor),
+                    leading: Icon(Icons.info, color: colorScheme.primary),
                     title: const Text('About Us'),
                     onTap: () {
                       Navigator.push(
@@ -163,7 +162,10 @@ class HomePage extends StatelessWidget {
                     },
                   ),
                   ListTile(
-                    leading: const Icon(Icons.description, color: primaryColor),
+                    leading: Icon(
+                      Icons.description,
+                      color: colorScheme.primary,
+                    ),
                     title: const Text('Terms and Conditions'),
                     onTap: () {
                       Navigator.push(

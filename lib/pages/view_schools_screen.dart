@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:myproject/models/school.dart';
-import 'package:myproject/services/DB/school.dart';
+import 'package:myproject/services/DB/isar_services.dart';
+import 'package:responsive_sizer/responsive_sizer.dart';
 import 'school_detail_screen.dart';
 
 class ViewSchoolsScreen extends StatelessWidget {
-  final AppDatabase db;
+  final IsarService isarService;
 
-  const ViewSchoolsScreen({super.key, required this.db});
+  const ViewSchoolsScreen({super.key, required this.isarService});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Saved Schools')),
       body: FutureBuilder<List<School>>(
-        future: db.getAllSchools(),
+        future: isarService.getAllSchools(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -29,10 +30,11 @@ class ViewSchoolsScreen extends StatelessWidget {
             itemBuilder: (context, index) {
               final s = schools[index];
               return Card(
+                margin: EdgeInsets.symmetric(horizontal: 2.h, vertical: 16.w),
                 child: ListTile(
                   title: Text('${s.schoolName} (${s.schoolType})'),
                   subtitle: Text(
-                    'Principal: ${s.principalName}\nPhone: ${s.phone1}',
+                    'Principal Name: ${s.principalName}\n School Phone No.: ${s.phone1}',
                   ),
                   trailing: Text('Code: ${s.schoolCode}'),
                   onTap: () {

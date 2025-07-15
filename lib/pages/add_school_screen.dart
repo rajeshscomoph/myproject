@@ -2,12 +2,14 @@
 
 import 'package:flutter/material.dart';
 import 'package:myproject/models/school.dart';
-import 'package:myproject/services/DB/school.dart';
+import 'package:myproject/services/DB/isar_services.dart';
+import 'package:responsive_sizer/responsive_sizer.dart';
+
 
 class AddSchoolScreen extends StatefulWidget {
-  final AppDatabase db;
+  final IsarService isarService;
 
-  const AddSchoolScreen({super.key, required this.db, required themeNotifier});
+  const AddSchoolScreen({super.key, required this.isarService});
 
   @override
   State<AddSchoolScreen> createState() => _AddSchoolScreenState();
@@ -27,7 +29,7 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
   final List<String> classes = [];
   final Map<String, List<String>> classSections = {};
 
-  bool isExisting = false; // editing existing school
+  bool isExisting = false;
 
   @override
   void dispose() {
@@ -40,23 +42,32 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
     sectionController.dispose();
     super.dispose();
   }
+
   Future<void> _saveSchool() async {
     if (_formKey.currentState!.validate()) {
-      final school = School(
-        schoolName: schoolNameController.text,
-        schoolCode: int.parse(schoolCodeController.text),
-        schoolType: schoolTypeController.text,
-        principalName: principalNameController.text,
-        phone1: phoneController.text,
-        classes: List.from(classes),
-        classSections: Map.from(classSections),
-      );
+      final school = School()
+        ..schoolName = schoolNameController.text
+        ..schoolCode = int.parse(schoolCodeController.text)
+        ..schoolType = schoolTypeController.text
+        ..principalName = principalNameController.text
+        ..phone1 = phoneController.text
+        ..classes = List.from(classes)
+        ..classSections = classSections.entries.map((e) {
+          return ClassSection()
+            ..className = e.key
+            ..sections = List.from(e.value);
+        }).toList();
 
-      if (isExisting) {
-        await widget.db.updateSchool(school);
-      } else {
-        await widget.db.insertSchool(school);
+
+      final code = int.parse(schoolCodeController.text);
+      final existingSchool = await widget.isarService.getSchoolByCode(code);
+
+      if (existingSchool != null) {
+        school.id =
+            existingSchool.id; // ✅ preserve id to update instead of insert
       }
+
+      await widget.isarService.addOrUpdateSchool(school);
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -77,31 +88,6 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
     }
   }
 
-  InputDecoration _inputDecoration(
-    String label, {
-    VoidCallback? suffixAction,
-    IconData? suffixIcon,
-  }) {
-    return InputDecoration(
-      labelText: label,
-      filled: true,
-      fillColor: const Color(0xFFE0F2F1),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Color(0xFF26A69A), width: 2),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: Color(0xFF80CBC4), width: 1),
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-      suffixIcon: suffixAction != null && suffixIcon != null
-          ? IconButton(icon: Icon(suffixIcon), onPressed: suffixAction)
-          : null,
-    );
-  }
-
   Future<void> _checkExistingSchool() async {
     final codeText = schoolCodeController.text.trim();
     if (codeText.isEmpty || int.tryParse(codeText) == null) {
@@ -111,7 +97,7 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
       return;
     }
     final code = int.parse(codeText);
-    final school = await widget.db.getSchoolByCode(code);
+    final school = await widget.isarService.getSchoolByCode(code);
 
     if (school != null) {
       setState(() {
@@ -121,9 +107,11 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
         principalNameController.text = school.principalName;
         phoneController.text = school.phone1;
         classes.clear();
-        classes.addAll(school.classes ?? []);
+        classes.addAll(school.classes);
         classSections.clear();
-        classSections.addAll(school.classSections ?? {});
+        for (final cs in school.classSections) {
+          classSections[cs.className] = List.from(cs.sections);
+        }
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -147,62 +135,50 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
     }
   }
 
+  InputDecoration _inputDecoration(
+    String label, {
+    VoidCallback? suffixAction,
+    IconData? suffixIcon,
+  }) {
+    return InputDecoration(
+      labelText: label,
+      filled: true,
+     border: OutlineInputBorder(borderRadius: BorderRadius.circular(15.sp)),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(15.sp),
+        ),
+      contentPadding: EdgeInsets.symmetric(horizontal: 5.h, vertical: 5.w),
+      suffixIcon: suffixAction != null && suffixIcon != null
+          ? IconButton(icon: Icon(suffixIcon), onPressed: suffixAction)
+          : null,
+    );
+  }
 
   @override
-  Widget build(BuildContext context) {
-    const primaryColor = Color(0xFF26A69A);
-    final cardColor = const Color(0xFFD0ECE7);
-
+  Widget build(BuildContext context ) {
+     
     return Scaffold(
       appBar: AppBar(title: const Text('Add School, Classes & Sections')),
       body: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: EdgeInsets.all(4.sp),
         child: Card(
-          color: cardColor,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(10.sp),
           ),
           elevation: 6,
           child: Padding(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(12.sp),
             child: Form(
               key: _formKey,
               child: ListView(
                 children: [
-                  const SizedBox(height: 8),
+                  SizedBox(height: 2.h),
                   TextFormField(
                     controller: schoolCodeController,
-                    decoration: InputDecoration(
-                      labelText: 'Enter School Code',
-                      filled: true,
-                      fillColor: const Color(0xFFE0F2F1),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(
-                          color: Color(0xFF26A69A),
-                          width: 2,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: const BorderSide(
-                          color: Color(0xFF80CBC4),
-                          width: 1,
-                        ),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 10,
-                      ),
-                      suffixIcon: _checkExistingSchool != null && Icons.search != null
-                          ? IconButton(
-                              icon: Icon(Icons.search),
-                              onPressed: _checkExistingSchool,
-                            )
-                          : null,
+                    decoration: _inputDecoration(
+                      'Enter School Code',
+                      suffixAction: _checkExistingSchool,
+                      suffixIcon: Icons.search,
                     ),
                     keyboardType: TextInputType.number,
                     validator: (v) => v!.isEmpty
@@ -211,28 +187,28 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
                         ? 'Must be a number'
                         : null,
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 1.5.h),
                   TextFormField(
                     controller: schoolNameController,
                     decoration: _inputDecoration('Enter School Name'),
                     validator: (v) =>
                         v!.isEmpty ? 'Please enter School Name' : null,
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 1.5.h),
                   TextFormField(
                     controller: schoolTypeController,
                     decoration: _inputDecoration('Enter School Type'),
                     validator: (v) =>
                         v!.isEmpty ? 'Please enter School Type' : null,
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 1.5.h),
                   TextFormField(
                     controller: principalNameController,
                     decoration: _inputDecoration('Enter Principal Name'),
                     validator: (v) =>
                         v!.isEmpty ? 'Please enter Principal Name' : null,
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 1.5.h),
                   TextFormField(
                     controller: phoneController,
                     decoration: _inputDecoration('Enter School Phone Number'),
@@ -240,23 +216,23 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
                     validator: (v) =>
                         v!.isEmpty ? 'Please enter Phone Number' : null,
                   ),
-                  const SizedBox(height: 24),
+                  SizedBox(height: 1.5.h),
                   const Divider(),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 1.5.h),
                   const Text(
-                    'Classes & Sections',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    'Classes',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 1.5.h),
                   Row(
                     children: [
                       Expanded(
                         child: TextFormField(
                           controller: classController,
-                          decoration: _inputDecoration('Enter Class Name'),
+                          decoration: _inputDecoration('Enter Class'),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width:8.w),
                       ElevatedButton(
                         onPressed: () {
                           final className = classController.text.trim();
@@ -269,20 +245,17 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
                             });
                           }
                         },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryColor,
-                          foregroundColor: Colors.white,
-                        ),
-                        child: const Text('Add'),
+                      child: const Text('Add'),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 2.h),
+                  const Divider(),
                   ...classes.map((className) {
                     return Card(
-                      margin: const EdgeInsets.symmetric(vertical: 4),
+                      margin: EdgeInsets.symmetric(vertical: 2.h),
                       child: Padding(
-                        padding: const EdgeInsets.all(8),
+                        padding: EdgeInsets.all(10.sp),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -313,11 +286,11 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
                                   child: TextFormField(
                                     controller: sectionController,
                                     decoration: _inputDecoration(
-                                      'Enter Section Name',
+                                      'Enter Section',
                                     ),
                                   ),
                                 ),
-                                const SizedBox(width: 8),
+                                SizedBox(width: 6.w),
                                 ElevatedButton(
                                   onPressed: () {
                                     final section = sectionController.text
@@ -332,8 +305,7 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
                                     }
                                   },
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: primaryColor,
-                                    foregroundColor: Colors.white,
+                                   
                                   ),
                                   child: const Text('Add'),
                                 ),
@@ -344,23 +316,22 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
                       ),
                     );
                   }),
-                  const SizedBox(height: 24),
+                  SizedBox(height: 2.h),
                   SizedBox(
                     width: double.infinity,
-                    height: 50,
+                    height: 8.h,
                     child: ElevatedButton.icon(
                       onPressed: _saveSchool,
                       icon: const Icon(Icons.save, color: Colors.white),
                       label: Text(isExisting ? 'Update' : 'Save'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryColor,
-                        foregroundColor: Colors.white,
+                        
                         textStyle: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(15.sp),
                         ),
                       ),
                     ),
