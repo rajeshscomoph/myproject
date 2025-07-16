@@ -5,7 +5,6 @@ import 'package:myproject/models/school.dart';
 import 'package:myproject/services/DB/isar_services.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
 
-
 class AddSchoolScreen extends StatefulWidget {
   final IsarService isarService;
 
@@ -45,58 +44,82 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
 
   Future<void> _saveSchool() async {
     if (_formKey.currentState!.validate()) {
-      final school = School()
-        ..schoolName = schoolNameController.text
-        ..schoolCode = int.parse(schoolCodeController.text)
-        ..schoolType = schoolTypeController.text
-        ..principalName = principalNameController.text
-        ..phone1 = phoneController.text
-        ..classes = List.from(classes)
-        ..classSections = classSections.entries.map((e) {
-          return ClassSection()
-            ..className = e.key
-            ..sections = List.from(e.value);
-        }).toList();
+      try {
+        final codeText = schoolCodeController.text.trim();
+        final code = int.tryParse(codeText);
+        if (code == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('⚠ Invalid school code.')),
+          );
+          return;
+        }
 
+        final existingSchool = await widget.isarService.getSchoolByCode(code);
 
-      final code = int.parse(schoolCodeController.text);
-      final existingSchool = await widget.isarService.getSchoolByCode(code);
+        final school = School()
+          ..schoolName = schoolNameController.text
+          ..schoolCode = code
+          ..schoolType = schoolTypeController.text
+          ..principalName = principalNameController.text
+          ..phone1 = phoneController.text
+          ..classes = List.from(classes)
+          ..classSections = classSections.entries.map((e) {
+            return ClassSection()
+              ..className = e.key
+              ..sections = List.from(e.value);
+          }).toList();
 
-      if (existingSchool != null) {
-        school.id =
-            existingSchool.id; // ✅ preserve id to update instead of insert
-      }
+        if (existingSchool != null) {
+          school.id = existingSchool.id;
+        }
 
-      await widget.isarService.addOrUpdateSchool(school);
+        await widget.isarService.addOrUpdateSchool(school);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            isExisting
-                ? '✅ School updated successfully!'
-                : '✅ School added successfully!',
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              existingSchool != null
+                  ? '✅ School details updated successfully.'
+                  : '✅ School details saved successfully.',
+            ),
           ),
-        ),
-      );
+        );
 
-      _formKey.currentState!.reset();
-      setState(() {
-        isExisting = false;
-        classes.clear();
-        classSections.clear();
-      });
+        // Clear safely
+        schoolNameController.clear();
+        schoolCodeController.clear();
+        schoolTypeController.clear();
+        principalNameController.clear();
+        phoneController.clear();
+        classController.clear();
+        sectionController.clear();
+
+        setState(() {
+          isExisting = false;
+          classes.clear();
+          classSections.clear();
+        });
+
+        _formKey.currentState!.reset();
+      } catch (e) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('❌ Failed to save: $e')));
+      }
     }
   }
 
   Future<void> _checkExistingSchool() async {
     final codeText = schoolCodeController.text.trim();
-    if (codeText.isEmpty || int.tryParse(codeText) == null) {
+    final code = int.tryParse(codeText);
+
+    if (code == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('⚠ Please enter a valid School Code')),
+        const SnackBar(content: Text('⚠ Please enter a valid school code.')),
       );
       return;
     }
-    final code = int.parse(codeText);
+
     final school = await widget.isarService.getSchoolByCode(code);
 
     if (school != null) {
@@ -115,7 +138,9 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('✔ Existing school data loaded')),
+        const SnackBar(
+          content: Text('✔ Existing school data loaded successfully.'),
+        ),
       );
     } else {
       setState(() {
@@ -127,38 +152,87 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
         classes.clear();
         classSections.clear();
       });
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('ℹ No existing school found. You can add new.'),
+          content: Text('ℹ No existing school found. You can add a new one.'),
         ),
       );
     }
   }
 
-  InputDecoration _inputDecoration(
-    String label, {
+  InputDecoration _inputDecoration({
     VoidCallback? suffixAction,
     IconData? suffixIcon,
+    String? helperText,
+    String? hintText,
   }) {
     return InputDecoration(
-      labelText: label,
+      hintText: hintText,
+      helperText: helperText,
       filled: true,
-     border: OutlineInputBorder(borderRadius: BorderRadius.circular(15.sp)),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(15.sp),
-        ),
-      contentPadding: EdgeInsets.symmetric(horizontal: 5.h, vertical: 5.w),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(15.sp)),
+      contentPadding: EdgeInsets.symmetric(horizontal: 1.h, vertical: 1.w),
       suffixIcon: suffixAction != null && suffixIcon != null
-          ? IconButton(icon: Icon(suffixIcon), onPressed: suffixAction)
+          ? Tooltip(
+              message: 'Check if this school code already exists.',
+              child: IconButton(
+                icon: Icon(suffixIcon),
+                onPressed: suffixAction,
+              ),
+            )
           : null,
     );
   }
 
+  void _addClass() {
+    final className = classController.text.trim();
+    if (className.isNotEmpty && !classes.contains(className)) {
+      setState(() {
+        classes.add(className);
+        classSections[className] = [];
+        classController.clear();
+      });
+    }
+  }
+
+  void _addSection(String className) {
+    final section = sectionController.text.trim();
+    if (section.isNotEmpty &&
+        !(classSections[className] ?? []).contains(section)) {
+      setState(() {
+        classSections[className]!.add(section);
+        sectionController.clear();
+      });
+    }
+  }
+
+  Widget _buildLabel(String text) => Padding(
+    padding: EdgeInsets.only(bottom: 0.5.h, top: 1.h),
+    child: Text(
+      text,
+      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15.sp),
+    ),
+  );
+
   @override
-  Widget build(BuildContext context ) {
-     
+  Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Add School, Classes & Sections')),
+      appBar: AppBar(
+        title: const Text('Add or Update School Details'),
+        bottom: PreferredSize(
+          preferredSize: Size.fromHeight(4.h),
+          child: Padding(
+            padding: EdgeInsets.only(bottom: 1.h),
+            child: Text(
+              'Manage school data, classes, and sections easily.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.9),
+              ),
+            ),
+          ),
+        ),
+      ),
       body: Padding(
         padding: EdgeInsets.all(4.sp),
         child: Card(
@@ -167,93 +241,91 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
           ),
           elevation: 6,
           child: Padding(
-            padding: EdgeInsets.all(12.sp),
+            padding: EdgeInsets.all(16.sp),
             child: Form(
               key: _formKey,
               child: ListView(
                 children: [
                   SizedBox(height: 2.h),
+                  _buildLabel('Enter school code'),
                   TextFormField(
                     controller: schoolCodeController,
                     decoration: _inputDecoration(
-                      'Enter School Code',
                       suffixAction: _checkExistingSchool,
                       suffixIcon: Icons.search,
+                      helperText: 'Unique numeric identifier for the school.',
                     ),
                     keyboardType: TextInputType.number,
                     validator: (v) => v!.isEmpty
-                        ? 'Please enter School Code'
+                        ? 'Please enter the school code.'
                         : int.tryParse(v) == null
-                        ? 'Must be a number'
+                        ? 'Code must be a number.'
                         : null,
                   ),
-                  SizedBox(height: 1.5.h),
+                  _buildLabel('Enter School Name'),
                   TextFormField(
                     controller: schoolNameController,
-                    decoration: _inputDecoration('Enter School Name'),
+                    decoration: _inputDecoration(
+                      helperText: 'Official name of the school.',
+                    ),
                     validator: (v) =>
-                        v!.isEmpty ? 'Please enter School Name' : null,
+                        v!.isEmpty ? 'Please enter the school name.' : null,
                   ),
-                  SizedBox(height: 1.5.h),
+                  _buildLabel('Enter School Type'),
                   TextFormField(
                     controller: schoolTypeController,
-                    decoration: _inputDecoration('Enter School Type'),
+                    decoration: _inputDecoration(
+                      helperText: 'e.g., Government, Private, NGO',
+                    ),
                     validator: (v) =>
-                        v!.isEmpty ? 'Please enter School Type' : null,
+                        v!.isEmpty ? 'Please enter the school type.' : null,
                   ),
-                  SizedBox(height: 1.5.h),
+                  _buildLabel('Enter Principal Name'),
                   TextFormField(
                     controller: principalNameController,
-                    decoration: _inputDecoration('Enter Principal Name'),
-                    validator: (v) =>
-                        v!.isEmpty ? 'Please enter Principal Name' : null,
+                    decoration: _inputDecoration(
+                      helperText: 'Full name of the principal.',
+                    ),
+                    validator: (v) => v!.isEmpty
+                        ? 'Please enter the principal\'s name.'
+                        : null,
                   ),
-                  SizedBox(height: 1.5.h),
+                  _buildLabel('Enter Contact Number'),
                   TextFormField(
                     controller: phoneController,
-                    decoration: _inputDecoration('Enter School Phone Number'),
+                    decoration: _inputDecoration(
+                      helperText: 'Primary phone number for the school.',
+                    ),
                     keyboardType: TextInputType.phone,
                     validator: (v) =>
-                        v!.isEmpty ? 'Please enter Phone Number' : null,
+                        v!.isEmpty ? 'Please enter the contact number.' : null,
                   ),
-                  SizedBox(height: 1.5.h),
+                  SizedBox(height: 2.h),
                   const Divider(),
-                  SizedBox(height: 1.5.h),
-                  const Text(
-                    'Classes',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 1.5.h),
+                  _buildLabel('Enter Classes'),
                   Row(
                     children: [
                       Expanded(
                         child: TextFormField(
                           controller: classController,
-                          decoration: _inputDecoration('Enter Class'),
+                          decoration: _inputDecoration(hintText: 'Class name'),
                         ),
                       ),
-                      SizedBox(width:8.w),
-                      ElevatedButton(
-                        onPressed: () {
-                          final className = classController.text.trim();
-                          if (className.isNotEmpty &&
-                              !classes.contains(className)) {
-                            setState(() {
-                              classes.add(className);
-                              classSections[className] = [];
-                              classController.clear();
-                            });
-                          }
-                        },
-                      child: const Text('Add'),
+                      SizedBox(width: 8.w),
+                      Tooltip(
+                        message: 'Add this class to the list',
+                        child: ElevatedButton(
+                          onPressed: _addClass,
+                          child: const Text('Add Class'),
+                        ),
                       ),
                     ],
                   ),
                   SizedBox(height: 2.h),
                   const Divider(),
-                  ...classes.map((className) {
-                    return Card(
-                      margin: EdgeInsets.symmetric(vertical: 2.h),
+                  ...classes.map(
+                    (className) => Card(
+                      margin: EdgeInsets.symmetric(vertical: 1.h),
                       child: Padding(
                         padding: EdgeInsets.all(10.sp),
                         child: Column(
@@ -273,9 +345,9 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
                                 return Chip(
                                   label: Text(s),
                                   onDeleted: () {
-                                    setState(() {
-                                      classSections[className]!.remove(s);
-                                    });
+                                    setState(
+                                      () => classSections[className]!.remove(s),
+                                    );
                                   },
                                 );
                               }).toList(),
@@ -286,52 +358,47 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
                                   child: TextFormField(
                                     controller: sectionController,
                                     decoration: _inputDecoration(
-                                      'Enter Section',
+                                      hintText: 'Section name',
                                     ),
                                   ),
                                 ),
-                                SizedBox(width: 6.w),
-                                ElevatedButton(
-                                  onPressed: () {
-                                    final section = sectionController.text
-                                        .trim();
-                                    if (section.isNotEmpty &&
-                                        !(classSections[className] ?? [])
-                                            .contains(section)) {
-                                      setState(() {
-                                        classSections[className]!.add(section);
-                                        sectionController.clear();
-                                      });
-                                    }
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                   
+                                SizedBox(width: 4.w),
+                                Tooltip(
+                                  message: 'Add this section to the class.',
+                                  child: ElevatedButton(
+                                    onPressed: () => _addSection(className),
+                                    child: const Text('Add Section'),
                                   ),
-                                  child: const Text('Add'),
                                 ),
                               ],
                             ),
                           ],
                         ),
                       ),
-                    );
-                  }),
+                    ),
+                  ),
                   SizedBox(height: 2.h),
                   SizedBox(
                     width: double.infinity,
                     height: 8.h,
-                    child: ElevatedButton.icon(
-                      onPressed: _saveSchool,
-                      icon: const Icon(Icons.save, color: Colors.white),
-                      label: Text(isExisting ? 'Update' : 'Save'),
-                      style: ElevatedButton.styleFrom(
-                        
-                        textStyle: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                    child: Tooltip(
+                      message: 'Save all school details to the database.',
+                      child: ElevatedButton.icon(
+                        onPressed: _saveSchool,
+                        icon: const Icon(Icons.save, color: Colors.white),
+                        label: Text(
+                          isExisting
+                              ? 'Update School Details'
+                              : 'Save School Details',
                         ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15.sp),
+                        style: ElevatedButton.styleFrom(
+                          textStyle: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15.sp),
+                          ),
                         ),
                       ),
                     ),

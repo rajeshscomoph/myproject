@@ -51,22 +51,63 @@ class AppTheme {
           fontWeight: FontWeight.bold,
           color: Colors.white,
         ),
+        displayMedium: TextStyle(
+          fontSize: 40,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+        displaySmall: TextStyle(
+          fontSize: 34,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
         headlineLarge: TextStyle(
           fontSize: 32,
           fontWeight: FontWeight.bold,
           color: Colors.white,
         ),
-        titleLarge: TextStyle(
+        headlineMedium: TextStyle(
+          fontSize: 28,
+          fontWeight: FontWeight.w600,
+          color: Colors.white,
+        ),
+        headlineSmall: TextStyle(
           fontSize: 24,
           fontWeight: FontWeight.w600,
           color: Colors.white,
         ),
+        titleLarge: TextStyle(
+          fontSize: 22,
+          fontWeight: FontWeight.w600,
+          color: Colors.white,
+        ),
+        titleMedium: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w500,
+          color: Colors.white,
+        ),
+        titleSmall: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+          color: Colors.white,
+        ),
         bodyLarge: TextStyle(fontSize: 16, color: Colors.white70),
         bodyMedium: TextStyle(fontSize: 14, color: Colors.white70),
+        bodySmall: TextStyle(fontSize: 12, color: Colors.white60),
         labelLarge: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w500,
           color: Colors.white,
+        ),
+        labelMedium: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+          color: Colors.white70,
+        ),
+        labelSmall: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w500,
+          color: Colors.white60,
         ),
       ),
       appBarTheme: AppBarTheme(

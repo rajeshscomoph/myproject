@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:myproject/models/school.dart';
-import 'package:myproject/pages/StudentDetailScreen.dart';
+import 'package:myproject/pages/HomePageAfterSection.dart'; // import the new page
 import 'package:responsive_sizer/responsive_sizer.dart';
 
 class SchoolDetailScreen extends StatelessWidget {
@@ -53,16 +53,15 @@ class SchoolDetailScreen extends StatelessWidget {
                             children: classSection.sections.map((section) {
                               return GestureDetector(
                                 onTap: () {
-                                  // Navigate to student detail page
                                   Navigator.push(
                                     context,
-                                   MaterialPageRoute(
-                                      builder: (context) => StudentDetailScreen(
-                                        className: classSection.className,
-                                        section: section,
-                                        school:
-                                            school, // pass the actual school object
-                                      ),
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          HomePageAfterSection(
+                                            school: school,
+                                            className: classSection.className,
+                                            section: section,
+                                          ),
                                     ),
                                   );
                                 },
