@@ -29,6 +29,7 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
   final Map<String, List<String>> classSections = {};
 
   bool isExisting = false;
+  bool isSaving = false;
 
   @override
   void dispose() {
@@ -43,80 +44,64 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
   }
 
   Future<void> _saveSchool() async {
-    if (_formKey.currentState!.validate()) {
-      try {
-        final codeText = schoolCodeController.text.trim();
-        final code = int.tryParse(codeText);
-        if (code == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('⚠ Invalid school code.')),
-          );
-          return;
-        }
+    if (!_formKey.currentState!.validate()) return;
 
-        final existingSchool = await widget.isarService.getSchoolByCode(code);
+    final confirmed = await _showConfirmationDialog(
+      title: isExisting ? 'Update School' : 'Save School',
+      message: isExisting
+          ? 'Are you sure you want to update this school?'
+          : 'Are you sure you want to save this new school?',
+    );
+    if (!confirmed) return;
 
-        final school = School()
-          ..schoolName = schoolNameController.text
-          ..schoolCode = code
-          ..schoolType = schoolTypeController.text
-          ..principalName = principalNameController.text
-          ..phone1 = phoneController.text
-          ..classes = List.from(classes)
-          ..classSections = classSections.entries.map((e) {
-            return ClassSection()
-              ..className = e.key
-              ..sections = List.from(e.value);
-          }).toList();
-
-        if (existingSchool != null) {
-          school.id = existingSchool.id;
-        }
-
-        await widget.isarService.addOrUpdateSchool(school);
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              existingSchool != null
-                  ? '✅ School details updated successfully.'
-                  : '✅ School details saved successfully.',
-            ),
-          ),
-        );
-
-        // Clear safely
-        schoolNameController.clear();
-        schoolCodeController.clear();
-        schoolTypeController.clear();
-        principalNameController.clear();
-        phoneController.clear();
-        classController.clear();
-        sectionController.clear();
-
-        setState(() {
-          isExisting = false;
-          classes.clear();
-          classSections.clear();
-        });
-
-        _formKey.currentState!.reset();
-      } catch (e) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('❌ Failed to save: $e')));
+    setState(() => isSaving = true);
+    try {
+      final code = int.tryParse(schoolCodeController.text.trim());
+      if (code == null) {
+        _showSnackBar('⚠ Invalid school code.');
+        setState(() => isSaving = false);
+        return;
       }
+
+      final existingSchool = await widget.isarService.getSchoolByCode(code);
+
+      final school = School()
+        ..schoolName = schoolNameController.text
+        ..schoolCode = code
+        ..schoolType = schoolTypeController.text
+        ..principalName = principalNameController.text
+        ..phone1 = phoneController.text
+        ..classes = List.from(classes)
+        ..classSections = classSections.entries.map((e) {
+          return ClassSection()
+            ..className = e.key
+            ..sections = List.from(e.value);
+        }).toList();
+
+      if (existingSchool != null) {
+        school.id = existingSchool.id;
+      }
+
+      await widget.isarService.addOrUpdateSchool(school);
+
+      _showSnackBar(
+        existingSchool != null
+            ? '✅ School details updated successfully.'
+            : '✅ School details saved successfully.',
+      );
+
+      _clearAll();
+    } catch (e) {
+      _showSnackBar('❌ Failed to save: $e');
+    } finally {
+      setState(() => isSaving = false);
     }
   }
 
   Future<void> _checkExistingSchool() async {
-    final codeText = schoolCodeController.text.trim();
-    final code = int.tryParse(codeText);
-
+    final code = int.tryParse(schoolCodeController.text.trim());
     if (code == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('⚠ Please enter a valid school code.')),
-      );
+      _showSnackBar('⚠ Please enter a valid school code.');
       return;
     }
 
@@ -136,29 +121,99 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
           classSections[cs.className] = List.from(cs.sections);
         }
       });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('✔ Existing school data loaded successfully.'),
-        ),
-      );
+      _showSnackBar('✔ Existing school data loaded successfully.');
     } else {
       setState(() {
         isExisting = false;
-        schoolNameController.clear();
-        schoolTypeController.clear();
-        principalNameController.clear();
-        phoneController.clear();
-        classes.clear();
-        classSections.clear();
+        _clearAll();
       });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('ℹ No existing school found. You can add a new one.'),
-        ),
-      );
+      _showSnackBar('ℹ No existing school found. You can add a new one.');
     }
+  }
+
+  Future<void> _removeClass(String className) async {
+    final confirmed = await _showConfirmationDialog(
+      title: 'Remove Class',
+      message: 'Are you sure you want to remove class "$className"?',
+    );
+    if (confirmed) {
+      setState(() {
+        classes.remove(className);
+        classSections.remove(className);
+      });
+    }
+  }
+
+  Future<void> _removeSection(String className, String section) async {
+    final confirmed = await _showConfirmationDialog(
+      title: 'Remove Section',
+      message: 'Remove section "$section" from class "$className"?',
+    );
+    if (confirmed) {
+      setState(() => classSections[className]?.remove(section));
+    }
+  }
+
+  void _addClass() {
+    final className = classController.text.trim();
+    if (className.isNotEmpty && !classes.contains(className)) {
+      setState(() {
+        classes.add(className);
+        classSections[className] = [];
+        classController.clear();
+      });
+    }
+  }
+
+  void _addSection(String className) {
+    final section = sectionController.text.trim();
+    if (section.isNotEmpty &&
+        !(classSections[className] ?? []).contains(section)) {
+      setState(() {
+        classSections[className]?.add(section);
+        sectionController.clear();
+      });
+    }
+  }
+
+  void _clearAll() {
+    schoolNameController.clear();
+    schoolCodeController.clear();
+    schoolTypeController.clear();
+    principalNameController.clear();
+    phoneController.clear();
+    classController.clear();
+    sectionController.clear();
+    classes.clear();
+    classSections.clear();
+  }
+
+  void _showSnackBar(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
+
+  Future<bool> _showConfirmationDialog({
+    required String title,
+    required String message,
+  }) async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Text(title),
+            content: Text(message),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Confirm'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
   }
 
   InputDecoration _inputDecoration({
@@ -185,28 +240,6 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
     );
   }
 
-  void _addClass() {
-    final className = classController.text.trim();
-    if (className.isNotEmpty && !classes.contains(className)) {
-      setState(() {
-        classes.add(className);
-        classSections[className] = [];
-        classController.clear();
-      });
-    }
-  }
-
-  void _addSection(String className) {
-    final section = sectionController.text.trim();
-    if (section.isNotEmpty &&
-        !(classSections[className] ?? []).contains(section)) {
-      setState(() {
-        classSections[className]!.add(section);
-        sectionController.clear();
-      });
-    }
-  }
-
   Widget _buildLabel(String text) => Padding(
     padding: EdgeInsets.only(bottom: 0.5.h, top: 1.h),
     child: Text(
@@ -214,6 +247,61 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
       style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15.sp),
     ),
   );
+
+  Widget _buildClassCard(String className) {
+    return Card(
+      margin: EdgeInsets.symmetric(vertical: 1.h),
+      child: Padding(
+        padding: EdgeInsets.all(10.sp),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Class: $className',
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                IconButton(
+                  tooltip: 'Remove this class',
+                  onPressed: () => _removeClass(className),
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                ),
+              ],
+            ),
+            Wrap(
+              spacing: 8,
+              children: (classSections[className] ?? []).map((s) {
+                return Chip(
+                  label: Text(s),
+                  onDeleted: () => _removeSection(className, s),
+                );
+              }).toList(),
+            ),
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: sectionController,
+                    decoration: _inputDecoration(hintText: 'Section name'),
+                  ),
+                ),
+                SizedBox(width: 4.w),
+                Tooltip(
+                  message: 'Add this section to the class.',
+                  child: ElevatedButton(
+                    onPressed: () => _addSection(className),
+                    child: const Text('Add Section'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -323,60 +411,7 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
                   ),
                   SizedBox(height: 2.h),
                   const Divider(),
-                  ...classes.map(
-                    (className) => Card(
-                      margin: EdgeInsets.symmetric(vertical: 1.h),
-                      child: Padding(
-                        padding: EdgeInsets.all(10.sp),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Class: $className',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            Wrap(
-                              spacing: 8,
-                              children: (classSections[className] ?? []).map((
-                                s,
-                              ) {
-                                return Chip(
-                                  label: Text(s),
-                                  onDeleted: () {
-                                    setState(
-                                      () => classSections[className]!.remove(s),
-                                    );
-                                  },
-                                );
-                              }).toList(),
-                            ),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: TextFormField(
-                                    controller: sectionController,
-                                    decoration: _inputDecoration(
-                                      hintText: 'Section name',
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(width: 4.w),
-                                Tooltip(
-                                  message: 'Add this section to the class.',
-                                  child: ElevatedButton(
-                                    onPressed: () => _addSection(className),
-                                    child: const Text('Add Section'),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
+                  ...classes.map(_buildClassCard),
                   SizedBox(height: 2.h),
                   SizedBox(
                     width: double.infinity,
@@ -384,8 +419,17 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
                     child: Tooltip(
                       message: 'Save all school details to the database.',
                       child: ElevatedButton.icon(
-                        onPressed: _saveSchool,
-                        icon: const Icon(Icons.save, color: Colors.white),
+                        onPressed: isSaving ? null : _saveSchool,
+                        icon: isSaving
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.save, color: Colors.white),
                         label: Text(
                           isExisting
                               ? 'Update School Details'
