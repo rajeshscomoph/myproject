@@ -1,6 +1,7 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:flutter/material.dart';
+import 'package:myproject/components/appbar_component.dart';
 import 'package:myproject/models/school.dart';
 import 'package:myproject/services/DB/isar_services.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
@@ -24,7 +25,7 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
   final phoneController = TextEditingController();
   final classController = TextEditingController();
   final sectionController = TextEditingController();
-
+  final String appName = "School Screening Program";
   final List<String> classes = [];
   final Map<String, List<String>> classSections = {};
 
@@ -44,6 +45,7 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
   }
 
   Future<void> _saveSchool() async {
+    FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
 
     final confirmed = await _showConfirmationDialog(
@@ -66,12 +68,12 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
       final existingSchool = await widget.isarService.getSchoolByCode(code);
 
       final school = School()
-        ..schoolName = schoolNameController.text
+        ..schoolName = schoolNameController.text.trim()
         ..schoolCode = code
-        ..schoolType = schoolTypeController.text
-        ..principalName = principalNameController.text
-        ..phone1 = phoneController.text
-        ..classes = List.from(classes)
+        ..schoolType = schoolTypeController.text.trim()
+        ..principalName = principalNameController.text.trim()
+        ..phone1 = phoneController.text.trim()
+        ..classes = List.from(classes..sort())
         ..classSections = classSections.entries.map((e) {
           return ClassSection()
             ..className = e.key
@@ -123,9 +125,11 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
       });
       _showSnackBar('✔ Existing school data loaded successfully.');
     } else {
+      final prevCode = schoolCodeController.text;
       setState(() {
         isExisting = false;
         _clearAll();
+        schoolCodeController.text = prevCode;
       });
       _showSnackBar('ℹ No existing school found. You can add a new one.');
     }
@@ -156,7 +160,8 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
 
   void _addClass() {
     final className = classController.text.trim();
-    if (className.isNotEmpty && !classes.contains(className)) {
+    if (className.isNotEmpty &&
+        !classes.any((c) => c.toLowerCase() == className.toLowerCase())) {
       setState(() {
         classes.add(className);
         classSections[className] = [];
@@ -166,9 +171,16 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
   }
 
   void _addSection(String className) {
+    if (!classSections.containsKey(className)) {
+      _showSnackBar('⚠ Class "$className" does not exist.');
+      return;
+    }
+
     final section = sectionController.text.trim();
     if (section.isNotEmpty &&
-        !(classSections[className] ?? []).contains(section)) {
+        !(classSections[className] ?? []).any(
+          (s) => s.toLowerCase() == section.toLowerCase(),
+        )) {
       setState(() {
         classSections[className]?.add(section);
         sectionController.clear();
@@ -306,150 +318,160 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Add or Update School Details'),
-        bottom: PreferredSize(
-          preferredSize: Size.fromHeight(4.h),
-          child: Padding(
-            padding: EdgeInsets.only(bottom: 1.h),
-            child: Text(
-              'Manage school data, classes, and sections easily.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.9),
+      appBar: appbarComponent(context) ,
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: EdgeInsets.all(4.sp),
+          child: Column(
+            children: [
+              Text('Add/Update School Details',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.secondary
+                ),
               ),
-            ),
-          ),
-        ),
-      ),
-      body: Padding(
-        padding: EdgeInsets.all(4.sp),
-        child: Card(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10.sp),
-          ),
-          elevation: 6,
-          child: Padding(
-            padding: EdgeInsets.all(16.sp),
-            child: Form(
-              key: _formKey,
-              child: ListView(
-                children: [
-                  SizedBox(height: 2.h),
-                  _buildLabel('Enter school code'),
-                  TextFormField(
-                    controller: schoolCodeController,
-                    decoration: _inputDecoration(
-                      suffixAction: _checkExistingSchool,
-                      suffixIcon: Icons.search,
-                      helperText: 'Unique numeric identifier for the school.',
-                    ),
-                    keyboardType: TextInputType.number,
-                    validator: (v) => v!.isEmpty
-                        ? 'Please enter the school code.'
-                        : int.tryParse(v) == null
-                        ? 'Code must be a number.'
-                        : null,
-                  ),
-                  _buildLabel('Enter School Name'),
-                  TextFormField(
-                    controller: schoolNameController,
-                    decoration: _inputDecoration(
-                      helperText: 'Official name of the school.',
-                    ),
-                    validator: (v) =>
-                        v!.isEmpty ? 'Please enter the school name.' : null,
-                  ),
-                  _buildLabel('Enter School Type'),
-                  TextFormField(
-                    controller: schoolTypeController,
-                    decoration: _inputDecoration(
-                      helperText: 'e.g., Government, Private, NGO',
-                    ),
-                    validator: (v) =>
-                        v!.isEmpty ? 'Please enter the school type.' : null,
-                  ),
-                  _buildLabel('Enter Principal Name'),
-                  TextFormField(
-                    controller: principalNameController,
-                    decoration: _inputDecoration(
-                      helperText: 'Full name of the principal.',
-                    ),
-                    validator: (v) => v!.isEmpty
-                        ? 'Please enter the principal\'s name.'
-                        : null,
-                  ),
-                  _buildLabel('Enter Contact Number'),
-                  TextFormField(
-                    controller: phoneController,
-                    decoration: _inputDecoration(
-                      helperText: 'Primary phone number for the school.',
-                    ),
-                    keyboardType: TextInputType.phone,
-                    validator: (v) =>
-                        v!.isEmpty ? 'Please enter the contact number.' : null,
-                  ),
-                  SizedBox(height: 2.h),
-                  const Divider(),
-                  _buildLabel('Enter Classes'),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: classController,
-                          decoration: _inputDecoration(hintText: 'Class name'),
+              Text(
+                'Manage school data, classes, and sections easily',
+                style: Theme.of(context).textTheme.bodyMedium
+              ),
+              Card(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15.sp),
+                ),
+                elevation: 8,
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(14.sp, 8.sp, 14.sp, 8.sp),
+                  child: Form(
+                    key: _formKey,
+                    child: ListView(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      children: [
+                        SizedBox(height: 1.h),
+                        _buildLabel('Enter School Code'),
+                        TextFormField(
+                          controller: schoolCodeController,
+                          decoration: _inputDecoration(
+                            suffixAction: _checkExistingSchool,
+                            suffixIcon: Icons.search,
+                            helperText:
+                                'Unique numeric identifier for the school.',
+                          ),
+                          keyboardType: TextInputType.number,
+                          validator: (v) => v!.trim().isEmpty
+                              ? 'Please enter the school code.'
+                              : int.tryParse(v.trim()) == null
+                              ? 'Code must be a number.'
+                              : null,
                         ),
-                      ),
-                      SizedBox(width: 8.w),
-                      Tooltip(
-                        message: 'Add this class to the list',
-                        child: ElevatedButton(
-                          onPressed: _addClass,
-                          child: const Text('Add Class'),
+                        _buildLabel('Enter School Name'),
+                        TextFormField(
+                          controller: schoolNameController,
+                          decoration: _inputDecoration(
+                            helperText: 'Official name of the school.',
+                          ),
+                          validator: (v) => v!.trim().isEmpty
+                              ? 'Please enter the school name.'
+                              : null,
                         ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 2.h),
-                  const Divider(),
-                  ...classes.map(_buildClassCard),
-                  SizedBox(height: 2.h),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 8.h,
-                    child: Tooltip(
-                      message: 'Save all school details to the database.',
-                      child: ElevatedButton.icon(
-                        onPressed: isSaving ? null : _saveSchool,
-                        icon: isSaving
-                            ? const SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
+                        _buildLabel('Enter School Type'),
+                        TextFormField(
+                          controller: schoolTypeController,
+                          decoration: _inputDecoration(
+                            helperText: 'e.g., Government, Private, NGO',
+                          ),
+                          validator: (v) => v!.trim().isEmpty
+                              ? 'Please enter the school type.'
+                              : null,
+                        ),
+                        _buildLabel('Enter Principal Name'),
+                        TextFormField(
+                          controller: principalNameController,
+                          decoration: _inputDecoration(
+                            helperText: 'Full name of the principal.',
+                          ),
+                          validator: (v) => v!.trim().isEmpty
+                              ? 'Please enter the principal\'s name.'
+                              : null,
+                        ),
+                        _buildLabel('Enter Contact Number'),
+                        TextFormField(
+                          controller: phoneController,
+                          decoration: _inputDecoration(
+                            helperText: 'Primary phone number for the school.',
+                          ),
+                          keyboardType: TextInputType.phone,
+                          validator: (v) => v!.trim().isEmpty
+                              ? 'Please enter the contact number.'
+                              : null,
+                        ),
+                        SizedBox(height: 2.h),
+                        const Divider(),
+                        _buildLabel('Enter Classes'),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextFormField(
+                                controller: classController,
+                                decoration: _inputDecoration(
+                                  hintText: 'Class name',
                                 ),
-                              )
-                            : const Icon(Icons.save, color: Colors.white),
-                        label: Text(
-                          isExisting
-                              ? 'Update School Details'
-                              : 'Save School Details',
+                              ),
+                            ),
+                            SizedBox(width: 8.w),
+                            Tooltip(
+                              message: 'Add this class to the list',
+                              child: ElevatedButton(
+                                onPressed: _addClass,
+                                child: const Text('Add Class'),
+                              ),
+                            ),
+                          ],
                         ),
-                        style: ElevatedButton.styleFrom(
-                          textStyle: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15.sp),
+                        SizedBox(height: 2.h),
+                        const Divider(),
+                        ...classes.map(_buildClassCard),
+                        SizedBox(height: 2.h),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 8.h,
+                          child: Tooltip(
+                            message: 'Save all school details to the database.',
+                            child: ElevatedButton.icon(
+                              onPressed: isSaving ? null : _saveSchool,
+                              icon: isSaving
+                                  ? const SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Icon(Icons.save, color: Colors.white),
+                              label: Text(
+                                isExisting
+                                    ? 'Update School Details'
+                                    : 'Save School Details',
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                textStyle: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(15.sp),
+                                ),
+                              ),
+                            ),
                           ),
                         ),
-                      ),
+                      ],
                     ),
                   ),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ),

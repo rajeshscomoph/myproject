@@ -1,9 +1,10 @@
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/material.dart';
+import 'package:myproject/components/appbar_component.dart';
 import 'package:myproject/services/DB/isar_services.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
-import 'package:myproject/pages/add_school_screen.dart';
-import 'package:myproject/pages/view_schools_screen.dart';
+import 'package:myproject/pages/main_pages/app_specific/school/add_school_screen.dart';
+import 'package:myproject/pages/main_pages/app_specific/school/view_schools_screen.dart';
 import '../../utility_pages/settings_page.dart';
 import '../../utility_pages/privacy_page.dart';
 import '../../utility_pages/about_us_page.dart';
@@ -33,32 +34,7 @@ class HomePage extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
-      appBar: AppBar(
-        toolbarHeight: 8.h,
-        centerTitle: false,
-        titleSpacing: 2.w,
-        title: Row(
-          children: [
-            Image.asset(
-              'assets/logos/appLogo.png',
-              height: 6.h,
-              fit: BoxFit.contain,
-            ),
-            SizedBox(width: 2.w),
-            Expanded(
-              child: Text(
-                appName,
-                style: TextStyle(
-                  color: colorScheme.onSecondary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18.sp,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-      ),
+      appBar: appbarComponent(context),
       body: SafeArea(
         child: ListView(
           padding: EdgeInsets.fromLTRB(16.sp, 10.sp, 16.sp, 10.sp),

@@ -20,6 +20,7 @@ dependencies:
   isar_flutter_libs: ^3.1.0+1
   intl: ^0.20.2
   animated_text_kit: ^4.2.3
+  flutter_dotenv: ^5.2.1
 
 
 dev_dependencies:
@@ -43,3 +44,4 @@ flutter:
     - assets/images/team 3.jpg
     - assets/images/team 4.jpg
     - assets/images/team 5.jpg
+    - assets/files/.env

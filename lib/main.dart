@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:myproject/app_theme.dart';
+import 'package:myproject/config.dart';
 import 'package:myproject/pages/main_pages/common_pages/login_page.dart';
 import 'package:myproject/services/DB/isar_services.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
@@ -16,7 +17,7 @@ Future<void> main() async {
 
   // Initialize Isar service
   final isarService = IsarService();
-
+  config = await Config.load();
   runApp(MyApp(isarService: isarService));
 }
 

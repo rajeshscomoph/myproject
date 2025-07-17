@@ -1,8 +1,8 @@
 // ignore: file_names
 import 'package:flutter/material.dart';
 import 'package:myproject/models/school.dart';
-import 'package:myproject/pages/StudentDetailScreen.dart';
-import 'package:myproject/pages/ViewStudentsPage.dart'; // import the real view page
+import 'package:myproject/pages/main_pages/app_specific/student/StudentDetailScreen.dart';
+import 'package:myproject/pages/main_pages/app_specific/student/ViewStudentsPage.dart'; // import the real view page
 import 'package:responsive_sizer/responsive_sizer.dart';
 
 class HomePageAfterSection extends StatelessWidget {

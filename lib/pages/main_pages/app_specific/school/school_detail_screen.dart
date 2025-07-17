@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:myproject/components/appbar_component.dart';
 import 'package:myproject/models/school.dart';
-import 'package:myproject/pages/HomePageAfterSection.dart'; // import the new page
+import 'package:myproject/pages/main_pages/app_specific/student/HomePageStudent.dart'; // import the new page
 import 'package:responsive_sizer/responsive_sizer.dart';
 
 class SchoolDetailScreen extends StatelessWidget {
@@ -11,7 +12,7 @@ class SchoolDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(school.schoolName)),
+      appBar: appbarComponent(context),
       body: Padding(
         padding: EdgeInsets.all(12.sp),
         child: Card(

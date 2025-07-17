@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myproject/components/appbar_component.dart';
 import 'package:myproject/models/school.dart';
 import 'package:myproject/services/DB/isar_services.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
@@ -6,13 +7,14 @@ import 'school_detail_screen.dart';
 
 class ViewSchoolsScreen extends StatelessWidget {
   final IsarService isarService;
+  final String appName = "School Screening Program";
 
   const ViewSchoolsScreen({super.key, required this.isarService});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Saved Schools')),
+      appBar:appbarComponent(context), 
       body: FutureBuilder<List<School>>(
         future: isarService.getAllSchools(),
         builder: (context, snapshot) {
@@ -30,11 +32,26 @@ class ViewSchoolsScreen extends StatelessWidget {
             itemBuilder: (context, index) {
               final s = schools[index];
               return Card(
-                margin: EdgeInsets.symmetric(horizontal: 2.h, vertical: 16.w),
+                margin: EdgeInsets.fromLTRB(10.sp, 8.sp, 10.sp, 8.sp),
                 child: ListTile(
-                  title: Text('${s.schoolName} (${s.schoolType})'),
-                  subtitle: Text(
-                    'Principal Name: ${s.principalName}\n School Phone No.: ${s.phone1}',
+                  title: Row(
+                    children: [
+                      Text(
+                        s.schoolName,
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text('(${s.schoolType})'),
+                    ],
+                  ),
+
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Principal Name: ${s.principalName}'),
+                      Text('Phone No: ${s.phone1}'),
+                    ],
                   ),
                   trailing: Text('Code: ${s.schoolCode}'),
                   onTap: () {
