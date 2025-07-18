@@ -37,6 +37,29 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
   bool isExisting = false;
   bool isSaving = false;
 
+@override
+  void initState() {
+    super.initState();
+    final school = widget.existingSchool;
+    if (school != null) {
+      isExisting = true;
+      schoolNameController.text = school.schoolName;
+      schoolCodeController.text = school.schoolCode.toString();
+      schoolTypeController.text = school.schoolType;
+      principalNameController.text = school.principalName;
+      phoneController.text = school.phone1;
+
+      classes.clear();
+      classes.addAll(school.classes);
+
+      classSections.clear();
+      sectionControllers.clear();
+      for (final cs in school.classSections) {
+        classSections[cs.className] = List.from(cs.sections);
+        sectionControllers[cs.className] = TextEditingController();
+      }
+    }
+  }
   @override
   void dispose() {
     schoolNameController.dispose();

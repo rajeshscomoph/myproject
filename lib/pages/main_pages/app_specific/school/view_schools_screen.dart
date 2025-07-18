@@ -106,29 +106,29 @@ class _ViewSchoolsScreenState extends State<ViewSchoolsScreen> {
   bool get _selectionMode => _selectedIds.isNotEmpty;
   bool get _singleSelection => _selectedIds.length == 1;
 
-  void _confirmAndNavigateToUpdate() async {
-    final selectedId = _selectedIds.first;
-    final selectedSchool = _schools.firstWhere((s) => s.id == selectedId);
-
+  void _handleUpdateSchool() async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Confirm Update'),
-        content: Text('Do you want to update "${selectedSchool.schoolName}"?'),
+        title: const Text("Confirm Update"),
+        content: const Text("Are you sure you want to update this school?"),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: const Text("Cancel"),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Update'),
+            child: const Text("Yes, Update"),
           ),
         ],
       ),
     );
 
     if (confirm == true) {
+      final selectedId = _selectedIds.first;
+      final selectedSchool = _schools.firstWhere((s) => s.id == selectedId);
+
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -137,7 +137,9 @@ class _ViewSchoolsScreenState extends State<ViewSchoolsScreen> {
             existingSchool: selectedSchool,
           ),
         ),
-      ).then((_) => _loadSchools());
+      ).then((_) {
+        _loadSchools();
+      });
     }
   }
 
@@ -191,222 +193,227 @@ class _ViewSchoolsScreenState extends State<ViewSchoolsScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-          ? Center(child: Text('Error: $_error'))
-          : Column(
-              children: [
-                SizedBox(height: 10.sp),
-                Padding(
-                  padding: EdgeInsets.all(10.sp),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      TextField(
-                        decoration: const InputDecoration(
-                          prefixIcon: Icon(Icons.search),
-                          border: OutlineInputBorder(),
-                          hintText: 'Search school',
-                        ),
-                        onChanged: (value) {
-                          _searchQuery = value;
-                          _applyFilters();
-                        },
-                      ),
-                      SizedBox(height: 10.sp),
-                      Wrap(
-                        spacing: 8.sp,
-                        children: _schoolTypes.map((type) {
-                          final isSelected = _selectedType == type;
-                          final icon = type == 'Govt'
-                              ? Icons.apartment
-                              : type == 'Private'
-                              ? Icons.school
-                              : type == 'Other'
-                              ? Icons.help_outline
-                              : Icons.list;
+              ? Center(child: Text('Error: $_error'))
+              : Column(
+                  children: [
+                    SizedBox(height: 10.sp),
+                    Padding(
+                      padding: EdgeInsets.all(10.sp),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Search bar
+                          TextField(
+                            decoration: const InputDecoration(
+                              prefixIcon: Icon(Icons.search),
+                              border: OutlineInputBorder(),
+                              hintText: 'Search school',
+                            ),
+                            onChanged: (value) {
+                              _searchQuery = value;
+                              _applyFilters();
+                            },
+                          ),
+                          SizedBox(height: 10.sp),
+                          // Chip filters
+                          Wrap(
+                            spacing: 8.sp,
+                            children: _schoolTypes.map((type) {
+                              final isSelected = _selectedType == type;
+                              final icon = type == 'Govt'
+                                  ? Icons.apartment
+                                  : type == 'Private'
+                                      ? Icons.school
+                                      : type == 'Other'
+                                          ? Icons.help_outline
+                                          : Icons.list;
 
-                          return ChoiceChip(
-                            label: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  icon,
-                                  size: 18,
+                              return ChoiceChip(
+                                label: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      icon,
+                                      size: 18,
+                                      color: isSelected ? Colors.white : null,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(type),
+                                  ],
+                                ),
+                                selected: isSelected,
+                                onSelected: (_) {
+                                  setState(() {
+                                    _selectedType = type;
+                                    _applyFilters();
+                                  });
+                                },
+                                selectedColor: Theme.of(
+                                  context,
+                                ).colorScheme.primary,
+                                labelStyle: TextStyle(
                                   color: isSelected ? Colors.white : null,
                                 ),
-                                const SizedBox(width: 4),
-                                Text(type),
-                              ],
-                            ),
-                            selected: isSelected,
-                            onSelected: (_) {
-                              setState(() {
-                                _selectedType = type;
-                                _applyFilters();
-                              });
-                            },
-                            selectedColor: Theme.of(
-                              context,
-                            ).colorScheme.primary,
-                            labelStyle: TextStyle(
-                              color: isSelected ? Colors.white : null,
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                      SizedBox(height: 10.sp),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          const Text("Sort by: "),
-                          DropdownButton<String>(
-                            value: _sortOption,
-                            items: _sortOptions.map((opt) {
-                              return DropdownMenuItem(
-                                value: opt,
-                                child: Text(opt),
                               );
                             }).toList(),
-                            onChanged: (value) {
-                              if (value != null) {
-                                _sortOption = value;
-                                _applyFilters();
-                              }
-                            },
+                          ),
+                          SizedBox(height: 10.sp),
+                          // Sorting dropdown
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              const Text("Sort by: "),
+                              DropdownButton<String>(
+                                value: _sortOption,
+                                items: _sortOptions.map((opt) {
+                                  return DropdownMenuItem(
+                                    value: opt,
+                                    child: Text(opt),
+                                  );
+                                }).toList(),
+                                onChanged: (value) {
+                                  if (value != null) {
+                                    _sortOption = value;
+                                    _applyFilters();
+                                  }
+                                },
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: _filteredSchools.isEmpty
-                      ? const Center(child: Text('No schools found.'))
-                      : ListView.builder(
-                          itemCount: _filteredSchools.length,
-                          itemBuilder: (context, index) {
-                            final s = _filteredSchools[index];
-                            final selected = _selectedIds.contains(s.id);
+                    ),
+                    Expanded(
+                      child: _filteredSchools.isEmpty
+                          ? const Center(child: Text('No schools found.'))
+                          : ListView.builder(
+                              itemCount: _filteredSchools.length,
+                              itemBuilder: (context, index) {
+                                final s = _filteredSchools[index];
+                                final selected = _selectedIds.contains(s.id);
 
-                            return Dismissible(
-                              key: Key(s.id.toString()),
-                              direction: DismissDirection.endToStart,
-                              background: Container(
-                                color: Colors.red,
-                                alignment: Alignment.centerRight,
-                                padding: const EdgeInsets.only(right: 20),
-                                child: const Icon(
-                                  Icons.delete,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              confirmDismiss: (_) async {
-                                return await showDialog(
-                                  context: context,
-                                  builder: (_) => AlertDialog(
-                                    title: const Text('Delete School'),
-                                    content: const Text(
-                                      'Are you sure you want to delete this school?',
+                                return Dismissible(
+                                  key: Key(s.id.toString()),
+                                  direction: DismissDirection.endToStart,
+                                  background: Container(
+                                    color: Colors.red,
+                                    alignment: Alignment.centerRight,
+                                    padding: const EdgeInsets.only(right: 20),
+                                    child: const Icon(
+                                      Icons.delete,
+                                      color: Colors.white,
                                     ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(context, false),
-                                        child: const Text('Cancel'),
+                                  ),
+                                  confirmDismiss: (_) async {
+                                    return await showDialog(
+                                      context: context,
+                                      builder: (_) => AlertDialog(
+                                        title: const Text('Delete School'),
+                                        content: const Text(
+                                          'Are you sure you want to delete this school?',
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () =>
+                                                Navigator.pop(context, false),
+                                            child: const Text('Cancel'),
+                                          ),
+                                          ElevatedButton(
+                                            onPressed: () =>
+                                                Navigator.pop(context, true),
+                                            child: const Text('Delete'),
+                                          ),
+                                        ],
                                       ),
-                                      ElevatedButton(
-                                        onPressed: () =>
-                                            Navigator.pop(context, true),
-                                        child: const Text('Delete'),
+                                    );
+                                  },
+                                  onDismissed: (_) => _deleteSchool(s.id),
+                                  child: GestureDetector(
+                                    onLongPress: () => _toggleSelection(s.id),
+                                    onTap: () {
+                                      if (_selectionMode) {
+                                        _toggleSelection(s.id);
+                                      } else {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) =>
+                                                SchoolDetailScreen(school: s),
+                                          ),
+                                        );
+                                      }
+                                    },
+                                    child: Card(
+                                      margin: EdgeInsets.symmetric(
+                                        horizontal: 10.sp,
+                                        vertical: 6.sp,
                                       ),
-                                    ],
+                                      color: selected
+                                          ? colorScheme.primary.withOpacity(0.15)
+                                          : null,
+                                      child: ListTile(
+                                        leading: _selectionMode
+                                            ? Checkbox(
+                                                value: selected,
+                                                onChanged: (_) =>
+                                                    _toggleSelection(s.id),
+                                              )
+                                            : null,
+                                        title: Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                s.schoolName,
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodyLarge
+                                                    ?.copyWith(
+                                                      fontWeight: FontWeight.bold,
+                                                    ),
+                                              ),
+                                            ),
+                                            Text(' (${s.schoolType})'),
+                                          ],
+                                        ),
+                                        subtitle: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text('Principal: ${s.principalName}'),
+                                            Text('Phone: ${s.phone1}'),
+                                          ],
+                                        ),
+                                        trailing:
+                                            Text('Code: ${s.schoolCode}'),
+                                      ),
+                                    ),
                                   ),
                                 );
                               },
-                              onDismissed: (_) => _deleteSchool(s.id),
-                              child: GestureDetector(
-                                onLongPress: () => _toggleSelection(s.id),
-                                onTap: () {
-                                  if (_selectionMode) {
-                                    _toggleSelection(s.id);
-                                  } else {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) =>
-                                            SchoolDetailScreen(school: s),
-                                      ),
-                                    );
-                                  }
-                                },
-                                child: Card(
-                                  margin: EdgeInsets.symmetric(
-                                    horizontal: 10.sp,
-                                    vertical: 6.sp,
-                                  ),
-                                  color: selected
-                                      ? colorScheme.primary.withOpacity(0.15)
-                                      : null,
-                                  child: ListTile(
-                                    leading: _selectionMode
-                                        ? Checkbox(
-                                            value: selected,
-                                            onChanged: (_) =>
-                                                _toggleSelection(s.id),
-                                          )
-                                        : null,
-                                    title: Row(
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            s.schoolName,
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyLarge
-                                                ?.copyWith(
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                          ),
-                                        ),
-                                        Text(' (${s.schoolType})'),
-                                      ],
-                                    ),
-                                    subtitle: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text('Principal: ${s.principalName}'),
-                                        Text('Phone: ${s.phone1}'),
-                                      ],
-                                    ),
-                                    trailing: Text('Code: ${s.schoolCode}'),
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                ),
-                if (_singleSelection)
-                  Padding(
-                    padding: EdgeInsets.all(16.sp),
-                    child: ElevatedButton.icon(
-                      icon: const Icon(Icons.edit),
-                      label: const Text('Update Selected School'),
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: Size(double.infinity, 45),
-                      ),
-                      onPressed: _confirmAndNavigateToUpdate,
+                            ),
                     ),
-                  ),
-                Padding(
-                  padding: EdgeInsets.only(bottom: 20.sp),
-                  child: const Text(
-                    '* Long-press a school to select or swipe left to delete',
-                    style: TextStyle(fontStyle: FontStyle.italic, fontSize: 12),
-                  ),
+                    if (_singleSelection)
+                      Padding(
+                        padding: EdgeInsets.all(16.sp),
+                        child: ElevatedButton.icon(
+                          onPressed: _handleUpdateSchool,
+                          icon: const Icon(Icons.edit),
+                          label: const Text("Update"),
+                          style: ElevatedButton.styleFrom(
+                            minimumSize: Size(double.infinity, 45),
+                          ),
+                        ),
+                      ),
+                    Padding(
+                      padding: EdgeInsets.only(bottom: 10.sp),
+                      child: const Text(
+                        '* Long-press a school to select or left swipe for delete',
+                        style: TextStyle(
+                            fontStyle: FontStyle.italic, fontSize: 12),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
     );
   }
 }
