@@ -9,7 +9,13 @@ import 'package:responsive_sizer/responsive_sizer.dart';
 class AddSchoolScreen extends StatefulWidget {
   final IsarService isarService;
 
-  const AddSchoolScreen({super.key, required this.isarService});
+  final School? existingSchool; // <-- make this optional
+
+  const AddSchoolScreen({
+    super.key,
+    required this.isarService,
+    this.existingSchool,
+  });
 
   @override
   State<AddSchoolScreen> createState() => _AddSchoolScreenState();
@@ -24,8 +30,7 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
   final principalNameController = TextEditingController();
   final phoneController = TextEditingController();
   final classController = TextEditingController();
-  final sectionController = TextEditingController();
-  final String appName = "School Screening Program";
+  final Map<String, TextEditingController> sectionControllers = {};
   final List<String> classes = [];
   final Map<String, List<String>> classSections = {};
 
@@ -40,7 +45,9 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
     principalNameController.dispose();
     phoneController.dispose();
     classController.dispose();
-    sectionController.dispose();
+    for (var controller in sectionControllers.values) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
@@ -64,6 +71,7 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
         setState(() => isSaving = false);
         return;
       }
+      
 
       final existingSchool = await widget.isarService.getSchoolByCode(code);
 
@@ -144,6 +152,8 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
       setState(() {
         classes.remove(className);
         classSections.remove(className);
+        sectionControllers[className]?.dispose();
+        sectionControllers.remove(className);
       });
     }
   }
@@ -165,6 +175,7 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
       setState(() {
         classes.add(className);
         classSections[className] = [];
+        sectionControllers[className] = TextEditingController();
         classController.clear();
       });
     }
@@ -175,15 +186,17 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
       _showSnackBar('⚠ Class "$className" does not exist.');
       return;
     }
+final controller = sectionControllers[className];
+    if (controller == null) return;
 
-    final section = sectionController.text.trim();
+    final section = controller.text.trim();
     if (section.isNotEmpty &&
         !(classSections[className] ?? []).any(
           (s) => s.toLowerCase() == section.toLowerCase(),
         )) {
       setState(() {
         classSections[className]?.add(section);
-        sectionController.clear();
+        controller.clear();
       });
     }
   }
@@ -195,7 +208,11 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
     principalNameController.clear();
     phoneController.clear();
     classController.clear();
-    sectionController.clear();
+
+     for (var controller in sectionControllers.values) {
+      controller.clear();
+    }
+    
     classes.clear();
     classSections.clear();
   }
@@ -261,6 +278,8 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
   );
 
   Widget _buildClassCard(String className) {
+    final controller = sectionControllers[className] ?? TextEditingController();
+    sectionControllers[className] = controller;
     return Card(
       margin: EdgeInsets.symmetric(vertical: 1.h),
       child: Padding(
@@ -295,7 +314,7 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
               children: [
                 Expanded(
                   child: TextFormField(
-                    controller: sectionController,
+                    controller: controller,
                     decoration: _inputDecoration(hintText: 'Section name'),
                   ),
                 ),

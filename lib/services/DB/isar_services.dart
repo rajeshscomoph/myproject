@@ -97,4 +97,11 @@ class IsarService {
       await isar.students.delete(id);
     });
   }
+
+  Future<void> deleteMultipleSchools(List<int> ids) async {
+    final isar = await db;
+    await isar.writeTxn(() async {
+      await isar.schools.deleteAll(ids);
+    });
+  }
 }

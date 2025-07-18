@@ -15,7 +15,7 @@ AppBar appbarComponent(BuildContext context) {
       children: [
         Image.asset(
           'assets/logos/appLogo.png',
-          height: 4.5.h,
+          height: 3.5.h,
           fit: BoxFit.contain,
         ),
         SizedBox(width: 2.w),
