@@ -106,6 +106,41 @@ class _ViewSchoolsScreenState extends State<ViewSchoolsScreen> {
   bool get _selectionMode => _selectedIds.isNotEmpty;
   bool get _singleSelection => _selectedIds.length == 1;
 
+  void _confirmAndNavigateToUpdate() async {
+    final selectedId = _selectedIds.first;
+    final selectedSchool = _schools.firstWhere((s) => s.id == selectedId);
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Confirm Update'),
+        content: Text('Do you want to update "${selectedSchool.schoolName}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Update'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => AddSchoolScreen(
+            isarService: widget.isarService,
+            existingSchool: selectedSchool,
+          ),
+        ),
+      ).then((_) => _loadSchools());
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -122,29 +157,7 @@ class _ViewSchoolsScreenState extends State<ViewSchoolsScreen> {
               )
             : appbarComponent(context).title,
         actions: _selectionMode
-            ? [if (_singleSelection)
-            IconButton(
-              icon: const Icon(Icons.edit),
-              color: colorScheme.onSecondary,
-              onPressed: () {
-                final selectedId = _selectedIds.first;
-                final selectedSchool =
-                    _schools.firstWhere((s) => s.id == selectedId);
-
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => AddSchoolScreen(
-                      isarService: widget.isarService,
-                      existingSchool: selectedSchool,
-                    ),
-                  ),
-                ).then((_) {
-                  _loadSchools(); // refresh after update
-                });
-              },
-            ),
-               
+            ? [
                 IconButton(
                   icon: const Icon(Icons.delete),
                   color: colorScheme.onSecondary,
@@ -187,7 +200,6 @@ class _ViewSchoolsScreenState extends State<ViewSchoolsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Search bar
                       TextField(
                         decoration: const InputDecoration(
                           prefixIcon: Icon(Icons.search),
@@ -200,7 +212,6 @@ class _ViewSchoolsScreenState extends State<ViewSchoolsScreen> {
                         },
                       ),
                       SizedBox(height: 10.sp),
-                      // Chip filters
                       Wrap(
                         spacing: 8.sp,
                         children: _schoolTypes.map((type) {
@@ -243,7 +254,6 @@ class _ViewSchoolsScreenState extends State<ViewSchoolsScreen> {
                         }).toList(),
                       ),
                       SizedBox(height: 10.sp),
-                      // Sorting dropdown
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
@@ -376,10 +386,22 @@ class _ViewSchoolsScreenState extends State<ViewSchoolsScreen> {
                           },
                         ),
                 ),
+                if (_singleSelection)
+                  Padding(
+                    padding: EdgeInsets.all(16.sp),
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.edit),
+                      label: const Text('Update Selected School'),
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: Size(double.infinity, 45),
+                      ),
+                      onPressed: _confirmAndNavigateToUpdate,
+                    ),
+                  ),
                 Padding(
                   padding: EdgeInsets.only(bottom: 20.sp),
                   child: const Text(
-                    '* Long-press a school to select or left swipe for delete',
+                    '* Long-press a school to select or swipe left to delete',
                     style: TextStyle(fontStyle: FontStyle.italic, fontSize: 12),
                   ),
                 ),
