@@ -33,33 +33,54 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
   final Map<String, TextEditingController> sectionControllers = {};
   final List<String> classes = [];
   final Map<String, List<String>> classSections = {};
-
+  String? selectedSchoolType;
+  String? lastSelectedSchoolType; 
   bool isExisting = false;
   bool isSaving = false;
 
-@override
+  final List<String> _schoolTypes = ['Govt', 'Private', 'Other'];
+
+
+  void _loadSchoolData(School school, bool enable) {
+    isExisting = true;
+
+    schoolNameController.text = school.schoolName;
+    schoolTypeController.text = school.schoolType;
+    principalNameController.text = school.principalName;
+    phoneController.text = school.phone1;
+    lastSelectedSchoolType = selectedSchoolType ?? lastSelectedSchoolType;
+
+    // Normalize and validate school type
+    if (['Govt', 'Private', 'Other'].contains(school.schoolType)) {
+      selectedSchoolType = school.schoolType;
+    } else if (school.schoolType == 'Government') {
+      selectedSchoolType = 'Govt';
+    } else {
+      selectedSchoolType = null; // fallback
+    }
+
+    // Load class and section data
+    classes.clear();
+    classes.addAll(school.classes);
+
+    classSections.clear();
+    sectionControllers.clear();
+    for (final cs in school.classSections) {
+      classSections[cs.className] = List.from(cs.sections);
+      if (enable) sectionControllers[cs.className] = TextEditingController();
+    }
+  }
+
+  @override
   void initState() {
     super.initState();
     final school = widget.existingSchool;
     if (school != null) {
-      isExisting = true;
-      schoolNameController.text = school.schoolName;
       schoolCodeController.text = school.schoolCode.toString();
-      schoolTypeController.text = school.schoolType;
-      principalNameController.text = school.principalName;
-      phoneController.text = school.phone1;
-
-      classes.clear();
-      classes.addAll(school.classes);
-
-      classSections.clear();
-      sectionControllers.clear();
-      for (final cs in school.classSections) {
-        classSections[cs.className] = List.from(cs.sections);
-        sectionControllers[cs.className] = TextEditingController();
-      }
+      _loadSchoolData(school,true);
     }
   }
+
   @override
   void dispose() {
     schoolNameController.dispose();
@@ -94,14 +115,13 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
         setState(() => isSaving = false);
         return;
       }
-      
 
       final existingSchool = await widget.isarService.getSchoolByCode(code);
 
       final school = School()
         ..schoolName = schoolNameController.text.trim()
         ..schoolCode = code
-        ..schoolType = schoolTypeController.text.trim()
+        ..schoolType = selectedSchoolType ?? ''
         ..principalName = principalNameController.text.trim()
         ..phone1 = phoneController.text.trim()
         ..classes = List.from(classes..sort())
@@ -117,6 +137,11 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
 
       await widget.isarService.addOrUpdateSchool(school);
 
+      if (selectedSchoolType == null) {
+        _showSnackBar('⚠ Please select a school type.');
+        setState(() => isSaving = false);
+        return;
+      }
       _showSnackBar(
         existingSchool != null
             ? '✅ School details updated successfully.'
@@ -142,17 +167,7 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
 
     if (school != null) {
       setState(() {
-        isExisting = true;
-        schoolNameController.text = school.schoolName;
-        schoolTypeController.text = school.schoolType;
-        principalNameController.text = school.principalName;
-        phoneController.text = school.phone1;
-        classes.clear();
-        classes.addAll(school.classes);
-        classSections.clear();
-        for (final cs in school.classSections) {
-          classSections[cs.className] = List.from(cs.sections);
-        }
+        _loadSchoolData(school, false);
       });
       _showSnackBar('✔ Existing school data loaded successfully.');
     } else {
@@ -209,7 +224,7 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
       _showSnackBar('⚠ Class "$className" does not exist.');
       return;
     }
-final controller = sectionControllers[className];
+    final controller = sectionControllers[className];
     if (controller == null) return;
 
     final section = controller.text.trim();
@@ -232,10 +247,10 @@ final controller = sectionControllers[className];
     phoneController.clear();
     classController.clear();
 
-     for (var controller in sectionControllers.values) {
+    for (var controller in sectionControllers.values) {
       controller.clear();
     }
-    
+
     classes.clear();
     classSections.clear();
   }
@@ -360,21 +375,22 @@ final controller = sectionControllers[className];
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: appbarComponent(context) ,
+      appBar: appbarComponent(context),
       body: SingleChildScrollView(
         child: Padding(
           padding: EdgeInsets.all(4.sp),
           child: Column(
             children: [
-              Text('Add/Update School Details',
+              Text(
+                'Add/Update School Details',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.secondary
+                  color: Theme.of(context).colorScheme.secondary,
                 ),
               ),
               Text(
                 'Manage school data, classes, and sections easily',
-                style: Theme.of(context).textTheme.bodyMedium
+                style: Theme.of(context).textTheme.bodyMedium,
               ),
               Card(
                 shape: RoundedRectangleBorder(
@@ -416,16 +432,60 @@ final controller = sectionControllers[className];
                               ? 'Please enter the school name.'
                               : null,
                         ),
-                        _buildLabel('Enter School Type'),
-                        TextFormField(
-                          controller: schoolTypeController,
-                          decoration: _inputDecoration(
-                            helperText: 'e.g., Government, Private, NGO',
-                          ),
-                          validator: (v) => v!.trim().isEmpty
-                              ? 'Please enter the school type.'
-                              : null,
+                        _buildLabel('Select School Type'),
+                       Wrap(
+                          spacing: 8.sp,
+                          children: _schoolTypes.map((type) {
+                            final isSelected = selectedSchoolType == type;
+
+                            final icon = type == 'Govt'
+                                ? Icons.apartment
+                                : type == 'Private'
+                                ? Icons.school
+                                : Icons.help_outline;
+
+                            return ChoiceChip(
+                              label: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    icon,
+                                    size: 18,
+                                    color: isSelected ? Colors.white : null,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(type),
+                                ],
+                              ),
+                              selected: isSelected,
+                              onSelected: (_) {
+                                setState(() {
+                                  lastSelectedSchoolType = selectedSchoolType ?? lastSelectedSchoolType;
+                                  selectedSchoolType = type;
+                                });
+                              },
+                              selectedColor: Theme.of(
+                                context,
+                              ).colorScheme.primary,
+                              labelStyle: TextStyle(
+                                color: isSelected ? Colors.white : null,
+                              ),
+                            );
+                          }).toList(),
                         ),
+                        if (selectedSchoolType == null && lastSelectedSchoolType != null)
+                          Padding(
+                            padding: EdgeInsets.only(top: 1.h, left: 1.h),
+                            child: Text(
+                              'Please select a school type.',
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontSize: 14.sp,
+                              ),
+                            ),
+                          ),
+
+
                         _buildLabel('Enter Principal Name'),
                         TextFormField(
                           controller: principalNameController,

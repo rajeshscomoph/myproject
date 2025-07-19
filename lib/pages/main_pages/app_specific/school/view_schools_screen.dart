@@ -405,7 +405,7 @@ class _ViewSchoolsScreenState extends State<ViewSchoolsScreen> {
                         ),
                       ),
                     Padding(
-                      padding: EdgeInsets.only(bottom: 10.sp),
+                      padding: EdgeInsets.only(bottom: 20.sp),
                       child: const Text(
                         '* Long-press a school to select or left swipe for delete',
                         style: TextStyle(
