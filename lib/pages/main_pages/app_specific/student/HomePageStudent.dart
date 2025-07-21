@@ -2,10 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:myproject/components/appbar_component.dart';
 import 'package:myproject/models/school.dart';
-import 'package:myproject/pages/main_pages/app_specific/school/school_detail_screen.dart';
 import 'package:myproject/pages/main_pages/app_specific/student/StudentDetailScreen.dart';
 import 'package:myproject/pages/main_pages/app_specific/student/ViewStudentsPage.dart';
-import 'package:myproject/pages/SchoolDetailScreen.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
 
 class HomePageAfterSection extends StatelessWidget {
@@ -33,33 +31,13 @@ class HomePageAfterSection extends StatelessWidget {
         child: ListView(
           padding: EdgeInsets.fromLTRB(16.sp, 10.sp, 16.sp, 10.sp),
           children: [
-            // Header with Back
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '📚 School & Class Overview',
-                  style: TextStyle(
-                    fontSize: 18.sp,
-                    fontWeight: FontWeight.bold,
-                    color: colorScheme.primary,
-                  ),
-                ),
-                TextButton.icon(
-                  onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            SchoolDetailScreen(school: school),
-                      ),
-                    );
-                  },
-                  icon: Icon(Icons.arrow_back, color: colorScheme.primary),
-                  label: const Text('Back'),
-                ),
-              ],
+             SizedBox(height: 2.h),
+            // Header
+            Text(
+              '📚 School & Class Overview',
+             style: Theme.of(context).textTheme.headlineSmall,
             ),
+
             SizedBox(height: 2.h),
 
             // School Info Card
@@ -68,6 +46,7 @@ class HomePageAfterSection extends StatelessWidget {
             SizedBox(height: 3.h),
 
             // Student Portal Section
+            SizedBox(height: 3.h),
             _buildStudentPortalCard(context, colorScheme),
 
             // Footer Info

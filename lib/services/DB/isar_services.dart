@@ -11,6 +11,7 @@ class IsarService {
   }
 
   Future<Isar> _initIsar() async {
+    
     final dir = await getApplicationDocumentsDirectory();
     return await Isar.open([SchoolSchema, StudentSchema], directory: dir.path);
   }

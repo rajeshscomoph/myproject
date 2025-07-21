@@ -4,6 +4,7 @@ import 'package:myproject/app_theme.dart';
 import 'package:myproject/config.dart';
 import 'package:myproject/pages/main_pages/common_pages/login_page.dart';
 import 'package:myproject/services/DB/isar_services.dart';
+import 'package:myproject/services/logs/log_manager.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
 
 Future<void> main() async {
@@ -14,9 +15,16 @@ Future<void> main() async {
     DeviceOrientation.portraitDown,
   ]);
 
+  await LogManager().init();
+
   // Initialize Isar service
   final isarService = IsarService();
   config = await Config.load();
+
+  await LogManager.writeDeviceAndAppInfo(config.logger);
+
+
+  config.logger.i("Starting the app");
   runApp(MyApp(isarService: isarService));
 }
 

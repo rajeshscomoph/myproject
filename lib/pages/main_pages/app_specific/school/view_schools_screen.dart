@@ -134,7 +134,7 @@ class _ViewSchoolsScreenState extends State<ViewSchoolsScreen> {
         MaterialPageRoute(
           builder: (_) => AddSchoolScreen(
             isarService: widget.isarService,
-            existingSchool: selectedSchool,
+            schoolCode: selectedSchool.schoolCode,
           ),
         ),
       ).then((_) {
@@ -338,7 +338,8 @@ class _ViewSchoolsScreenState extends State<ViewSchoolsScreen> {
                                           context,
                                           MaterialPageRoute(
                                             builder: (_) =>
-                                                SchoolDetailScreen(school: s),
+                                                SchoolDetailScreen(isarService:widget.isarService,  schoolCode: s.schoolCode,
+                                        ),
                                           ),
                                         );
                                       }

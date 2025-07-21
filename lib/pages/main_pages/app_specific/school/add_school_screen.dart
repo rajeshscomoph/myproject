@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:myproject/components/appbar_component.dart';
+import 'package:myproject/config.dart';
 import 'package:myproject/models/school.dart';
 import 'package:myproject/services/DB/isar_services.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
@@ -9,12 +10,12 @@ import 'package:responsive_sizer/responsive_sizer.dart';
 class AddSchoolScreen extends StatefulWidget {
   final IsarService isarService;
 
-  final School? existingSchool; // <-- make this optional
+  final int? schoolCode; // <-- make this optional
 
   const AddSchoolScreen({
     super.key,
     required this.isarService,
-    this.existingSchool,
+    this.schoolCode,
   });
 
   @override
@@ -34,53 +35,92 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
   final List<String> classes = [];
   final Map<String, List<String>> classSections = {};
   String? selectedSchoolType;
-  String? lastSelectedSchoolType; 
+  String? lastSelectedSchoolType;
   bool isExisting = false;
   bool isSaving = false;
 
   final List<String> _schoolTypes = ['Govt', 'Private', 'Other'];
 
-
   void _loadSchoolData(School school, bool enable) {
+    config.logger.i("🟡 _loadSchoolData started | enable=$enable");
+    config.logger.i("📦 School: ${school.toJson()}");
+
     isExisting = true;
 
     schoolNameController.text = school.schoolName;
     schoolTypeController.text = school.schoolType;
     principalNameController.text = school.principalName;
     phoneController.text = school.phone1;
+
+    config.logger.i("""
+📋 Controllers:
+  schoolName: '${school.schoolName}'
+  schoolType: '${school.schoolType}'
+  principalName: '${school.principalName}'
+  phone: '${school.phone1}'
+""");
+
     lastSelectedSchoolType = selectedSchoolType ?? lastSelectedSchoolType;
+    config.logger.i("↩ lastSelectedSchoolType: '$lastSelectedSchoolType'");
 
     // Normalize and validate school type
     if (['Govt', 'Private', 'Other'].contains(school.schoolType)) {
       selectedSchoolType = school.schoolType;
+      config.logger.i("✅ Valid school type: '$selectedSchoolType'");
     } else if (school.schoolType == 'Government') {
       selectedSchoolType = 'Govt';
+      config.logger.i("🔁 Normalized 'Government' ➜ 'Govt'");
     } else {
-      selectedSchoolType = null; // fallback
+      selectedSchoolType = null;
+      config.logger.w("⚠ Unknown type '${school.schoolType}', setting to null");
     }
 
-    // Load class and section data
     classes.clear();
     classes.addAll(school.classes);
+    config.logger.i("📚 Loaded ${classes.length} classes: $classes");
 
     classSections.clear();
     sectionControllers.clear();
+    config.logger.d("🔄 Cleared previous classSections and controllers");
+
     for (final cs in school.classSections) {
       classSections[cs.className] = List.from(cs.sections);
-      if (enable) sectionControllers[cs.className] = TextEditingController();
+      config.logger.i("➡ Class '${cs.className}' → Sections: ${cs.sections}");
+
+      if (enable) {
+        sectionControllers[cs.className] = TextEditingController();
+        config.logger.d("🆕 Created controller for '${cs.className}'");
+      } else {
+        config.logger.d(
+          "⏭ Skipped controller (enable=false) for '${cs.className}'",
+        );
+      }
     }
+
+    config.logger.i("✅ _loadSchoolData complete");
   }
 
   @override
+  @override
   void initState() {
     super.initState();
-    final school = widget.existingSchool;
-    if (school != null) {
-      schoolCodeController.text = school.schoolCode.toString();
-      _loadSchoolData(school,true);
-    }
+    _loadSchoolIfEditing();
   }
 
+  Future<void> _loadSchoolIfEditing() async {
+    if (widget.schoolCode != null) {
+      final school = await widget.isarService.getSchoolByCode(
+        widget.schoolCode!,
+      );
+      if (school != null) {
+        schoolCodeController.text = school.schoolCode.toString();
+        _loadSchoolData(school, true);
+        setState(() {
+          isExisting = true;
+        });
+      }
+    }
+  }
   @override
   void dispose() {
     schoolNameController.dispose();
@@ -136,7 +176,7 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
       }
 
       await widget.isarService.addOrUpdateSchool(school);
-
+      Navigator.pop(context, school);
       if (selectedSchoolType == null) {
         _showSnackBar('⚠ Please select a school type.');
         setState(() => isSaving = false);
@@ -253,6 +293,8 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
 
     classes.clear();
     classSections.clear();
+    selectedSchoolType = null;
+    lastSelectedSchoolType = null;
   }
 
   void _showSnackBar(String msg) {
@@ -433,7 +475,7 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
                               : null,
                         ),
                         _buildLabel('Select School Type'),
-                       Wrap(
+                        Wrap(
                           spacing: 8.sp,
                           children: _schoolTypes.map((type) {
                             final isSelected = selectedSchoolType == type;
@@ -460,7 +502,9 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
                               selected: isSelected,
                               onSelected: (_) {
                                 setState(() {
-                                  lastSelectedSchoolType = selectedSchoolType ?? lastSelectedSchoolType;
+                                  lastSelectedSchoolType =
+                                      selectedSchoolType ??
+                                      lastSelectedSchoolType;
                                   selectedSchoolType = type;
                                 });
                               },
@@ -473,7 +517,8 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
                             );
                           }).toList(),
                         ),
-                        if (selectedSchoolType == null && lastSelectedSchoolType != null)
+                        if (selectedSchoolType == null &&
+                            lastSelectedSchoolType != null)
                           Padding(
                             padding: EdgeInsets.only(top: 1.h, left: 1.h),
                             child: Text(
@@ -484,7 +529,6 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
                               ),
                             ),
                           ),
-
 
                         _buildLabel('Enter Principal Name'),
                         TextFormField(
