@@ -30,8 +30,9 @@ class _SchoolDetailScreenState extends State<SchoolDetailScreen> {
   }
 
   Future<void> _loadSchool() async {
-    final fetchedSchool =
-        await widget.isarService.getSchoolByCode(widget.schoolCode);
+    final fetchedSchool = await widget.isarService.getSchoolByCode(
+      widget.schoolCode,
+    );
     setState(() {
       school = fetchedSchool;
     });
@@ -56,12 +57,22 @@ class _SchoolDetailScreenState extends State<SchoolDetailScreen> {
                     children: [
                       _header("🏫 School Information"),
                       SizedBox(height: 1.5.h),
-                      _infoTile(Icons.school, 'School Name', school!.schoolName),
-                      _infoTile(Icons.code, 'School Code',
-                          '${school!.schoolCode}'),
+                      _infoTile(
+                        Icons.school,
+                        'School Name',
+                        school!.schoolName,
+                      ),
+                      _infoTile(
+                        Icons.code,
+                        'School Code',
+                        '${school!.schoolCode}',
+                      ),
                       _infoTile(Icons.category, 'Type', school!.schoolType),
-                      _infoTile(Icons.person, 'Principal',
-                          school!.principalName),
+                      _infoTile(
+                        Icons.person,
+                        'Principal',
+                        school!.principalName,
+                      ),
                       _infoTile(Icons.phone, 'Phone', school!.phone1),
                       SizedBox(height: 3.h),
                       Divider(
@@ -91,7 +102,9 @@ class _SchoolDetailScreenState extends State<SchoolDetailScreen> {
                                 Wrap(
                                   spacing: 8,
                                   runSpacing: 8,
-                                  children: classSection.sections.map((section) {
+                                  children: classSection.sections.map((
+                                    section,
+                                  ) {
                                     return GestureDetector(
                                       onTap: () {
                                         Navigator.push(
@@ -99,10 +112,14 @@ class _SchoolDetailScreenState extends State<SchoolDetailScreen> {
                                           MaterialPageRoute(
                                             builder: (context) =>
                                                 HomePageAfterSection(
-                                              school: school!,
-                                              className: classSection.className,
-                                              section: section,
-                                            ),
+                                                  schoolCode:
+                                                      school!.schoolCode,
+                                                  className:
+                                                      classSection.className,
+                                                  section: section,
+                                                  isarService:
+                                                      widget.isarService,
+                                                ),
                                           ),
                                         );
                                       },
@@ -135,25 +152,7 @@ class _SchoolDetailScreenState extends State<SchoolDetailScreen> {
           width: double.infinity,
           height: 7.h,
           child: ElevatedButton.icon(
-            onPressed: () async {
-              final updatedSchool = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => AddSchoolScreen(
-                    isarService: widget.isarService,
-                    schoolCode: widget.schoolCode,
-                  ),
-                ),
-              );
-
-              if (updatedSchool != null && mounted) {
-                final refreshedSchool = await widget.isarService
-                    .getSchoolByCode(widget.schoolCode);
-                setState(() {
-                  school = refreshedSchool; // update local state
-                });
-              }
-            },
+            onPressed: _navigateToEditSchool,
             style: ElevatedButton.styleFrom(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14.sp),
@@ -194,18 +193,23 @@ class _SchoolDetailScreenState extends State<SchoolDetailScreen> {
 
     if (confirmed != true) return;
 
-    final result = await Navigator.push(
+    final updatedSchool = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => AddSchoolScreen(
+        builder: (_) => AddSchoolScreen(
           isarService: widget.isarService,
-          schoolCode: school!.schoolCode,
+          schoolCode: widget.schoolCode,
         ),
       ),
     );
 
-    if (result == true) {
-      await _loadSchool();
+    if (updatedSchool != null && mounted) {
+      final refreshedSchool = await widget.isarService.getSchoolByCode(
+        widget.schoolCode,
+      );
+      setState(() {
+        school = refreshedSchool; // update local state
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('✅ School updated successfully!')),
       );

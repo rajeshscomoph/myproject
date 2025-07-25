@@ -1,25 +1,55 @@
 // ignore: file_names
 import 'package:flutter/material.dart';
 import 'package:myproject/components/appbar_component.dart';
+import 'package:myproject/components/school_info_card.dart';
 import 'package:myproject/models/school.dart';
-import 'package:myproject/pages/main_pages/app_specific/student/StudentDetailScreen.dart';
+import 'package:myproject/pages/main_pages/app_specific/student/add_StudentDetail.dart';
 import 'package:myproject/pages/main_pages/app_specific/student/ViewStudentsPage.dart';
+import 'package:myproject/services/DB/isar_services.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
 
-class HomePageAfterSection extends StatelessWidget {
-  final School school;
+class HomePageAfterSection extends StatefulWidget {
+  final int schoolCode;
   final String className;
   final String section;
+  final IsarService isarService;
+
+  const HomePageAfterSection({
+    super.key,
+    required this.schoolCode,
+    required this.className,
+    required this.section,
+    required this.isarService,
+  });
+
+  @override
+  State<HomePageAfterSection> createState() => _HomePageAfterSectionState();
+}
+
+class _HomePageAfterSectionState extends State<HomePageAfterSection> {
+  late School school;
+  bool isLoading = true;
 
   final String contactInfo = "Help Line: 011-26593140";
   final String copyright = "© 2025 Community Ophthalmology";
 
-  const HomePageAfterSection({
-    super.key,
-    required this.school,
-    required this.className,
-    required this.section,
-  });
+  @override
+  void initState() {
+    super.initState();
+    _loadSchool();
+  }
+
+  Future<void> _loadSchool() async {
+    final fetchedSchool = await widget.isarService.getSchoolByCode(
+      widget.schoolCode,
+    );
+    if (fetchedSchool != null) {
+      setState(() {
+        school = fetchedSchool;
+        isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,60 +57,57 @@ class HomePageAfterSection extends StatelessWidget {
 
     return Scaffold(
       appBar: appbarComponent(context),
-      body: SafeArea(
-        child: ListView(
-          padding: EdgeInsets.fromLTRB(16.sp, 10.sp, 16.sp, 10.sp),
-          children: [
-             SizedBox(height: 2.h),
-            // Header
-            Text(
-              '📚 School & Class Overview',
-             style: Theme.of(context).textTheme.headlineSmall,
-            ),
-
-            SizedBox(height: 2.h),
-
-            // School Info Card
-            _buildInfoCard(context),
-
-            SizedBox(height: 3.h),
-
-            // Student Portal Section
-            SizedBox(height: 3.h),
-            _buildStudentPortalCard(context, colorScheme),
-
-            // Footer Info
-            SizedBox(height: 4.h),
-            Center(
-              child: Column(
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SafeArea(
+              child: ListView(
+                padding: EdgeInsets.fromLTRB(16.sp, 12.sp, 16.sp, 10.sp),
                 children: [
-                  Icon(
-                    Icons.support_agent,
-                    size: 20.sp,
-                    color: colorScheme.secondary,
-                  ),
-                  SizedBox(height: 1.h),
+                  SizedBox(height: 2.h),
                   Text(
-                    contactInfo,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: colorScheme.secondary,
-                    ),
-                    textAlign: TextAlign.center,
+                    '📚 School & Class Overview',
+                    style: Theme.of(context).textTheme.headlineSmall,
                   ),
-                  SizedBox(height: 1.h),
-                  Text(
-                    copyright,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurface.withOpacity(0.6),
+                  SizedBox(height: 2.h),
+                  SchoolInfoCard(
+                    school: school,
+                    className: widget.className,
+                    section: widget.section,
+                  ),
+
+                  SizedBox(height: 3.h),
+                  _buildStudentPortalCard(context, colorScheme),
+                  SizedBox(height: 4.h),
+                  Center(
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.support_agent,
+                          size: 20.sp,
+                          color: colorScheme.secondary,
+                        ),
+                        SizedBox(height: 1.h),
+                        Text(
+                          contactInfo,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: colorScheme.secondary),
+                          textAlign: TextAlign.center,
+                        ),
+                        SizedBox(height: 1.h),
+                        Text(
+                          copyright,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: colorScheme.onSurface.withOpacity(0.6),
+                              ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
                     ),
-                    textAlign: TextAlign.center,
                   ),
                 ],
               ),
             ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -127,8 +154,8 @@ class HomePageAfterSection extends StatelessWidget {
               children: [
                 _infoRow(Icons.domain, 'School Name', school.schoolName),
                 _infoRow(Icons.code, 'School Code', '${school.schoolCode}'),
-                _infoRow(Icons.class_, 'Class', className),
-                _infoRow(Icons.group, 'Section', section),
+                _infoRow(Icons.class_, 'Class', widget.className),
+                _infoRow(Icons.group, 'Section', widget.section),
               ],
             ),
           ),
@@ -164,8 +191,8 @@ class HomePageAfterSection extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (context) => StudentDetailScreen(
-                    className: className,
-                    section: section,
+                    className: widget.className,
+                    section: widget.section,
                     school: school,
                   ),
                 ),
@@ -181,8 +208,8 @@ class HomePageAfterSection extends StatelessWidget {
                 MaterialPageRoute(
                   builder: (context) => ViewStudentsPage(
                     school: school,
-                    className: className,
-                    section: section,
+                    className: widget.className,
+                    section: widget.section,
                   ),
                 ),
               );

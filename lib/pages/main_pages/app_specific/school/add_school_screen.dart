@@ -1,11 +1,13 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:myproject/components/appbar_component.dart';
 import 'package:myproject/config.dart';
 import 'package:myproject/models/school.dart';
 import 'package:myproject/services/DB/isar_services.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
+import 'dart:async';
 
 class AddSchoolScreen extends StatefulWidget {
   final IsarService isarService;
@@ -24,7 +26,8 @@ class AddSchoolScreen extends StatefulWidget {
 
 class _AddSchoolScreenState extends State<AddSchoolScreen> {
   final _formKey = GlobalKey<FormState>();
-
+Timer? _debounce;
+  int? _lastSearchedCode;
   final schoolNameController = TextEditingController();
   final schoolCodeController = TextEditingController();
   final schoolTypeController = TextEditingController();
@@ -62,6 +65,7 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
 
     lastSelectedSchoolType = selectedSchoolType ?? lastSelectedSchoolType;
     config.logger.i("↩ lastSelectedSchoolType: '$lastSelectedSchoolType'");
+
 
     // Normalize and validate school type
     if (['Govt', 'Private', 'Other'].contains(school.schoolType)) {
@@ -101,11 +105,25 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
   }
 
   @override
-  @override
+ @override
   void initState() {
     super.initState();
     _loadSchoolIfEditing();
+
+    schoolCodeController.addListener(() {
+      final text = schoolCodeController.text.trim();
+      final code = int.tryParse(text);
+      if (code != null && text.isNotEmpty) {
+        if (_lastSearchedCode == code) return; // Prevent same query repeat
+        _debounce?.cancel();
+        _debounce = Timer(const Duration(milliseconds: 500), () {
+          _lastSearchedCode = code;
+          _checkExistingSchool(code);
+        });
+      }
+    });
   }
+
 
   Future<void> _loadSchoolIfEditing() async {
     if (widget.schoolCode != null) {
@@ -121,8 +139,10 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
       }
     }
   }
+
   @override
   void dispose() {
+    _debounce?.cancel();
     schoolNameController.dispose();
     schoolCodeController.dispose();
     schoolTypeController.dispose();
@@ -196,19 +216,17 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
     }
   }
 
-  Future<void> _checkExistingSchool() async {
-    final code = int.tryParse(schoolCodeController.text.trim());
-    if (code == null) {
+  Future<void> _checkExistingSchool([int? code]) async {
+    final inputCode = code ?? int.tryParse(schoolCodeController.text.trim());
+    if (inputCode == null) {
       _showSnackBar('⚠ Please enter a valid school code.');
       return;
     }
 
-    final school = await widget.isarService.getSchoolByCode(code);
-
+    final school = await widget.isarService.getSchoolByCode(inputCode);
     if (school != null) {
-      setState(() {
-        _loadSchoolData(school, false);
-      });
+      _loadSchoolData(school, false);
+      setState(() => isExisting = true);
       _showSnackBar('✔ Existing school data loaded successfully.');
     } else {
       final prevCode = schoolCodeController.text;
@@ -267,7 +285,7 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
     final controller = sectionControllers[className];
     if (controller == null) return;
 
-    final section = controller.text.trim();
+    final section = controller.text.trim().toUpperCase();
     if (section.isNotEmpty &&
         !(classSections[className] ?? []).any(
           (s) => s.toLowerCase() == section.toLowerCase(),
@@ -463,6 +481,7 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
                               : int.tryParse(v.trim()) == null
                               ? 'Code must be a number.'
                               : null,
+                          onFieldSubmitted: (_) => _checkExistingSchool(),
                         ),
                         _buildLabel('Enter School Name'),
                         TextFormField(
@@ -547,10 +566,18 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
                             helperText: 'Primary phone number for the school.',
                           ),
                           keyboardType: TextInputType.phone,
-                          validator: (v) => v!.trim().isEmpty
-                              ? 'Please enter the contact number.'
-                              : null,
+                          validator: (v) {
+                            final trimmed = v!.trim();
+                            if (trimmed.isEmpty) {
+                              return 'Please enter the contact number.';
+                            }
+                            if (!RegExp(r'^\d{10}$').hasMatch(trimmed)) {
+                              return 'Enter a valid 10-digit number.';
+                            }
+                            return null;
+                          },
                         ),
+
                         SizedBox(height: 2.h),
                         const Divider(),
                         _buildLabel('Enter Classes'),
@@ -559,8 +586,14 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
                             Expanded(
                               child: TextFormField(
                                 controller: classController,
+                                keyboardType: TextInputType.number,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly,
+                                ],
                                 decoration: _inputDecoration(
-                                  hintText: 'Class name',
+                                  hintText: 'Class number',
+                                  helperText:
+                                      'Only numeric values are allowed (e.g., 1, 2, 10)',
                                 ),
                               ),
                             ),
@@ -574,6 +607,7 @@ class _AddSchoolScreenState extends State<AddSchoolScreen> {
                             ),
                           ],
                         ),
+
                         SizedBox(height: 2.h),
                         const Divider(),
                         ...classes.map(_buildClassCard),

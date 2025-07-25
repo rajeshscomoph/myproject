@@ -19,6 +19,7 @@ class School {
   /// classSections = [
   ///   ClassSection(className: "1", sections: ["A", "B"])
   /// ]
+  /// 
   List<ClassSection> classSections = [];
 
   /// Backlink from Student -> School (student.school)
