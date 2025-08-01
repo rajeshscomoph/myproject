@@ -12,19 +12,23 @@ class StudentDemographicScreen extends StatefulWidget {
   final String section;
   final dynamic school;
   final IsarService isarService;
-
+ final Student? existingStudent;
   const StudentDemographicScreen({
     super.key,
     required this.className,
     required this.section,
     required this.school,
     required this.isarService,
+    this.existingStudent,
   });
 
   @override
   State<StudentDemographicScreen> createState() =>
       _StudentDemographicScreenState();
 }
+
+
+
 
 class _StudentDemographicScreenState extends State<StudentDemographicScreen> {
   final _formKey = GlobalKey<FormState>();
@@ -34,10 +38,27 @@ class _StudentDemographicScreenState extends State<StudentDemographicScreen> {
   String? selectedGender;
   String? selectedExamination;
   DateTime? dob;
+   bool showGenderError = false;
+  bool showExamError = false;
+  bool showDobError = false;
+
 
   final List<String> _genders = ['Male', 'Female', 'Other'];
   final List<String> _examinations = ['Examined', 'Absent', 'Refused'];
 
+@override
+  void initState() {
+    super.initState();
+    final s = widget.existingStudent;
+    if (s != null) {
+      nameController.text = s.name;
+      enrollNoController.text = s.enrollNo;
+      rollNumberController.text = s.rollNumber.toString();
+      selectedGender = s.gender;
+      dob = s.dob;
+      selectedExamination = s.examination;
+    }
+  }
   Widget _buildLabel(String text) => Padding(
     padding: EdgeInsets.only(bottom: 1.h, top: 1.h),
     child: Text(
@@ -47,7 +68,14 @@ class _StudentDemographicScreenState extends State<StudentDemographicScreen> {
   );
 
   Future<void> _saveStudent() async {
-    if (!_formKey.currentState!.validate() ||
+    final isValid = _formKey.currentState!.validate();
+    setState(() {
+      showDobError = dob == null;
+      showGenderError = selectedGender == null;
+      showExamError = selectedExamination == null;
+    });
+
+    if (!isValid ||
         dob == null ||
         selectedGender == null ||
         selectedExamination == null) {
@@ -56,8 +84,8 @@ class _StudentDemographicScreenState extends State<StudentDemographicScreen> {
       );
       return;
     }
-
-    final student = Student()
+final student = widget.existingStudent ?? Student();
+    Student()
       ..name = nameController.text.trim()
       ..enrollNo = enrollNoController.text.trim()
       ..rollNumber = int.tryParse(rollNumberController.text.trim()) ?? 0
@@ -125,7 +153,7 @@ class _StudentDemographicScreenState extends State<StudentDemographicScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
+   Widget build(BuildContext context) {
     return Scaffold(
       appBar: appbarComponent(context),
       body: Padding(
@@ -140,18 +168,21 @@ class _StudentDemographicScreenState extends State<StudentDemographicScreen> {
                 section: widget.section,
               ),
               SizedBox(height: 0.5.h),
+
               _buildLabel('Student Name'),
               TextFormField(
                 controller: nameController,
                 validator: (value) =>
                     value!.isEmpty ? 'Please enter name' : null,
               ),
+
               _buildLabel('Enrollment Number'),
               TextFormField(
                 controller: enrollNoController,
                 validator: (value) =>
                     value!.isEmpty ? 'Please enter enrollment number' : null,
               ),
+
               _buildLabel('Roll Number'),
               TextFormField(
                 controller: rollNumberController,
@@ -159,12 +190,22 @@ class _StudentDemographicScreenState extends State<StudentDemographicScreen> {
                 validator: (value) =>
                     value!.isEmpty ? 'Please enter roll number' : null,
               ),
+
               _buildChoiceChipField(
                 label: 'Gender',
                 options: _genders,
                 selected: selectedGender,
-                onSelected: (val) => selectedGender = val,
+                onSelected: (val) {
+                  setState(() {
+                    selectedGender = val;
+                    showGenderError = false;
+                  });
+                },
               ),
+              if (showGenderError)
+                const Text('Please select gender',
+                    style: TextStyle(color: Colors.red)),
+
               _buildLabel('Date of Birth'),
               InkWell(
                 onTap: _pickDate,
@@ -187,13 +228,33 @@ class _StudentDemographicScreenState extends State<StudentDemographicScreen> {
                   ),
                 ),
               ),
+              if (showDobError)
+                const Padding(
+                  padding: EdgeInsets.only(top: 4),
+                  child: Text(
+                    'Please select date of birth',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                ),
+
               SizedBox(height: 1.h),
+
               _buildChoiceChipField(
                 label: 'Examination',
                 options: _examinations,
                 selected: selectedExamination,
-                onSelected: (val) => selectedExamination = val,
+                onSelected: (val) {
+                  setState(() {
+                    selectedExamination = val;
+                    showExamError = false;
+                  });
+                },
               ),
+              if (showExamError)
+                const Text('Please select examination status',
+                    style: TextStyle(color: Colors.red)),
+
+              /// 👓 Screening route
               if (selectedExamination?.toLowerCase() == 'examined')
                 Padding(
                   padding: EdgeInsets.only(top: 2.h),
@@ -201,11 +262,24 @@ class _StudentDemographicScreenState extends State<StudentDemographicScreen> {
                     icon: const Icon(Icons.arrow_forward),
                     label: const Text("Proceed to Screening"),
                     onPressed: () {
+                      final isValid = _formKey.currentState!.validate();
+                      setState(() {
+                        showDobError = dob == null;
+                        showGenderError = selectedGender == null;
+                        showExamError = selectedExamination == null;
+                      });
+
+                      if (!isValid || dob == null || selectedGender == null || selectedExamination == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Please complete all fields.")),
+                        );
+                        return;
+                      }
+
                       final student = Student()
                         ..name = nameController.text.trim()
                         ..enrollNo = enrollNoController.text.trim()
-                        ..rollNumber =
-                            int.tryParse(rollNumberController.text.trim()) ?? 0
+                        ..rollNumber = int.tryParse(rollNumberController.text.trim()) ?? 0
                         ..gender = selectedGender ?? ''
                         ..dob = dob ?? DateTime(2010)
                         ..examination = selectedExamination ?? ''
@@ -234,6 +308,7 @@ class _StudentDemographicScreenState extends State<StudentDemographicScreen> {
                     },
                   ),
                 ),
+
               SizedBox(height: 3.h),
               ElevatedButton.icon(
                 icon: const Icon(Icons.save),
@@ -247,3 +322,4 @@ class _StudentDemographicScreenState extends State<StudentDemographicScreen> {
     );
   }
 }
+

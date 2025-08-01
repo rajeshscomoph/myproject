@@ -4,6 +4,7 @@ import 'package:myproject/components/appbar_component.dart';
 import 'package:myproject/components/school_info_card.dart';
 import 'package:myproject/models/school.dart';
 import 'package:myproject/models/student.dart';
+import 'package:myproject/pages/main_pages/app_specific/school/add_school_screen.dart';
 import 'package:myproject/pages/main_pages/app_specific/student/add_StudentDetail.dart';
 import 'package:myproject/pages/main_pages/app_specific/student/student_demographics_screen.dart';
 import 'package:myproject/services/DB/isar_services.dart';
@@ -205,6 +206,8 @@ class _HomePageAfterSectionState extends State<HomePageAfterSection> {
   }
 
   Set<int> _selectedIds = {};
+  
+  get student => null;
 
   Map<String, int> _getStatusCounts() {
     final counts = <String, int>{
@@ -232,17 +235,18 @@ class _HomePageAfterSectionState extends State<HomePageAfterSection> {
       children: [
         ElevatedButton.icon(
           onPressed: () async {
-            await Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => StudentDemographicScreen(
-                  className: widget.className,
-                  section: widget.section,
-                  school: school,
-                  isarService: widget.isarService,
-                ),
-              ),
-            );
+            Navigator.push(
+  context,
+  MaterialPageRoute(
+    builder: (_) => StudentDemographicScreen(
+      className: widget.className,
+      section: widget.section,
+      school: school,
+      isarService: widget.isarService,
+      existingStudent: student,
+    ),
+  ),
+);
             await _loadStudents(); // Refresh after return
           },
           icon: const Icon(Icons.person_add),
@@ -457,9 +461,10 @@ class _HomePageAfterSectionState extends State<HomePageAfterSection> {
               runSpacing: 1.h,
               alignment: WrapAlignment.spaceBetween,
               children: [
+                
                 if (_selectedIds.length == 1)
                   SizedBox(
-                    width: 90.w / (_selectedIds.length == 1 ? 2 : 2),
+                    width: 90.w / (_selectedIds.length == 1 ? 2:2 ),
                     height: 9.h,
 
                     child: ElevatedButton.icon(
@@ -494,10 +499,10 @@ class _HomePageAfterSectionState extends State<HomePageAfterSection> {
                           final student = _filteredStudents.firstWhere(
                             (s) => s.id == studentId,
                           );
-                          Navigator.push(
+                        Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => StudentDetailScreen(
+                              builder: (_) => StudentDemographicScreen(
                                 className: widget.className,
                                 section: widget.section,
                                 school: school,
@@ -507,9 +512,11 @@ class _HomePageAfterSectionState extends State<HomePageAfterSection> {
                               ),
                             ),
                           ).then((_) async {
+                            
                             await _loadStudents(); // Reload after update
                             setState(() => _selectedIds.clear());
                           });
+
                         }
                       },
                     ),
