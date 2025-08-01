@@ -4,16 +4,25 @@ import 'package:myproject/models/student.dart';
 import 'package:path_provider/path_provider.dart';
 
 class IsarService {
-  late Future<Isar> db;
+  static Isar? _isarInstance; // Singleton Isar instance
 
   IsarService() {
-    db = _initIsar();
+    _initIsar(); // Ensures it's initialized once
+  }
+
+  // Initialize or return existing Isar instance
+  Future<Isar> get db async {
+    if (_isarInstance != null) return _isarInstance!;
+    return await _initIsar();
   }
 
   Future<Isar> _initIsar() async {
-    
     final dir = await getApplicationDocumentsDirectory();
-    return await Isar.open([SchoolSchema, StudentSchema], directory: dir.path);
+    _isarInstance = await Isar.open(
+      [SchoolSchema, StudentSchema],
+      directory: dir.path,
+    );
+    return _isarInstance!;
   }
 
   // -------------------------------
@@ -22,9 +31,8 @@ class IsarService {
 
   Future<int> addOrUpdateSchool(School school) async {
     final isar = await db;
-    return await isar.writeTxn(() async {
-      return await isar.schools.put(school);
-    });
+    return await isar.writeTxn(() async => await isar.schools.put(school));
+    
   }
 
   Future<List<School>> getAllSchools() async {
@@ -42,34 +50,35 @@ class IsarService {
 
   Future<void> deleteSchool(int id) async {
     final isar = await db;
-    await isar.writeTxn(() async {
-      await isar.schools.delete(id);
-    });
+    await isar.writeTxn(() async => await isar.schools.delete(id));
+  }
+
+  Future<void> deleteMultipleSchools(List<int> ids) async {
+    final isar = await db;
+    await isar.writeTxn(() async => await isar.schools.deleteAll(ids));
   }
 
   // -------------------------------
   // STUDENT OPERATIONS
   // -------------------------------
 
-  // Add or update student (link to school by schoolId)
-  Future<int> addOrUpdateStudent(Student student, int schoolId) async {
+  Future<int> addOrUpdateStudent(Student student) async {
     final isar = await db;
     return await isar.writeTxn(() async {
-      final school = await isar.schools.get(schoolId);
-      if (school != null) {
-        student.school.value = school;
-      }
-      return await isar.students.put(student);
+      final studentId = await isar.students.put(
+        student,
+      ); // ✅ Save student first
+      await student.school.save(); // ✅ Now safe to save the IsarLink
+      return studentId;
     });
   }
 
-  // Get all students
+
   Future<List<Student>> getAllStudents() async {
     final isar = await db;
     return await isar.students.where().findAll();
   }
 
-  // Get students linked to a specific school
   Future<List<Student>> getStudentsBySchoolId(int schoolId) async {
     final isar = await db;
     final school = await isar.schools.get(schoolId);
@@ -82,7 +91,6 @@ class IsarService {
     return [];
   }
 
-  // Get student by roll number within a school
   Future<Student?> getStudentByRoll(int schoolId, int rollNumber) async {
     final isar = await db;
     return await isar.students
@@ -91,18 +99,29 @@ class IsarService {
         .rollNumberEqualTo(rollNumber)
         .findFirst();
   }
+   Future getStudentById(int id) async {
+    final isar = await db;
+    return await isar.students.get(id);
+  }
 
   Future<void> deleteStudent(int id) async {
     final isar = await db;
-    await isar.writeTxn(() async {
-      await isar.students.delete(id);
-    });
+    await isar.writeTxn(() async => await isar.students.delete(id));
+  }
+  Future<void> deleteMultipleStudents(List<int> ids) async {
+    final isar = await db;
+    await isar.writeTxn(() async => await isar.students.deleteAll(ids));
   }
 
-  Future<void> deleteMultipleSchools(List<int> ids) async {
-    final isar = await db;
-    await isar.writeTxn(() async {
-      await isar.schools.deleteAll(ids);
-    });
+  // Optional: close Isar when needed
+  Future<void> close() async {
+    if (_isarInstance != null) {
+      await _isarInstance!.close();
+      _isarInstance = null;
+    }
   }
+
+ 
+   
 }
+

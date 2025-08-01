@@ -3,6 +3,7 @@ import 'package:myproject/components/appbar_component.dart';
 import 'package:myproject/models/school.dart';
 import 'package:myproject/pages/main_pages/app_specific/school/add_school_screen.dart';
 import 'package:myproject/pages/main_pages/app_specific/student/HomePageStudent.dart';
+import 'package:myproject/pages/main_pages/app_specific/student/ViewStudentsPage.dart' hide HomePageAfterSection;
 import 'package:myproject/services/DB/isar_services.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
 
@@ -60,7 +61,7 @@ class _SchoolDetailScreenState extends State<SchoolDetailScreen> {
                       _infoTile(
                         Icons.school,
                         'School Name',
-                        school!.schoolName,
+                        school!.schoolName ,
                       ),
                       _infoTile(
                         Icons.code,

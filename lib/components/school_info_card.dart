@@ -38,10 +38,10 @@ class SchoolInfoCard extends StatelessWidget {
             padding: EdgeInsets.symmetric(vertical: 14.sp, horizontal: 16.sp),
             child: Row(
               children: [
-                const Icon(Icons.info, color: Colors.white),
+                const Icon(Icons.domain, color: Colors.white),
                 SizedBox(width: 10.sp),
                 Text(
-                  'School, Class & Section Info',
+                  '${school.schoolName} (${school.schoolCode})',
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
@@ -56,14 +56,9 @@ class SchoolInfoCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                 _infoRow(
-                  Icons.domain,
-                  'School Name (Code)',
-                  '${school.schoolName} (${school.schoolCode})',
-                ),
                 _infoRow(
                   Icons.class_,
-                  'Class',
+                  'CLASS',
                   '$className - $section',
                 ),
               ],

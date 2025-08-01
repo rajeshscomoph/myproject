@@ -1,10 +1,11 @@
-// ignore: file_names
 import 'package:flutter/material.dart';
+import 'package:isar/isar.dart';
 import 'package:myproject/components/appbar_component.dart';
 import 'package:myproject/components/school_info_card.dart';
 import 'package:myproject/models/school.dart';
+import 'package:myproject/models/student.dart';
 import 'package:myproject/pages/main_pages/app_specific/student/add_StudentDetail.dart';
-import 'package:myproject/pages/main_pages/app_specific/student/ViewStudentsPage.dart';
+import 'package:myproject/pages/main_pages/app_specific/student/student_demographics_screen.dart';
 import 'package:myproject/services/DB/isar_services.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
 
@@ -30,13 +31,35 @@ class _HomePageAfterSectionState extends State<HomePageAfterSection> {
   late School school;
   bool isLoading = true;
 
+  final List<String> _examinationOptions = [
+    'All',
+    'Examined',
+    'Absent',
+    'Refused',
+  ];
+  String _selectedExamination = 'All';
+  final TextEditingController _searchController = TextEditingController();
+  List<Student> _allStudents = [];
+  List<Student> _filteredStudents = [];
+
+  final int _pageSize = 20;
+  int _currentPage = 1;
+  late ScrollController _scrollController;
+  List<Student> _paginatedStudents = [];
   final String contactInfo = "Help Line: 011-26593140";
   final String copyright = "© 2025 Community Ophthalmology";
+
+  int get _totalPages => (_filteredStudents.length / _pageSize)
+      .ceil()
+      .clamp(1, double.infinity)
+      .toInt();
 
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController()..addListener(_onScroll);
     _loadSchool();
+    _searchController.addListener(_applyFilters);
   }
 
   Future<void> _loadSchool() async {
@@ -48,7 +71,82 @@ class _HomePageAfterSectionState extends State<HomePageAfterSection> {
         school = fetchedSchool;
         isLoading = false;
       });
+      _loadStudents();
     }
+  }
+
+  Future<void> _loadStudents() async {
+    final db = await widget.isarService.db;
+    final students = await db.students.where().findAll();
+
+    setState(() {
+      _allStudents = students
+          .where(
+            (s) =>
+                s.school.value?.schoolCode == widget.schoolCode &&
+                s.className == widget.className &&
+                s.section == widget.section,
+          )
+          .toList();
+    });
+
+    _applyFilters();
+  }
+
+  void _applyFilters() {
+    final query = _searchController.text.trim().toLowerCase();
+    final results = _allStudents.where((student) {
+      final matchesSearch =
+          student.name.toLowerCase().contains(query) ||
+          student.rollNumber.toString().contains(query);
+      final matchesExam =
+          _selectedExamination == 'All' ||
+          student.examination == _selectedExamination;
+      return matchesSearch && matchesExam;
+    }).toList();
+
+    setState(() {
+      _filteredStudents = results;
+      _currentPage = 1;
+      _updatePaginatedList();
+    });
+  }
+
+  void _updatePaginatedList() {
+    final start = (_currentPage - 1) * _pageSize;
+    final end = (_currentPage * _pageSize).clamp(0, _filteredStudents.length);
+    _paginatedStudents = _filteredStudents.sublist(start, end);
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      _loadMoreStudents();
+    }
+  }
+
+  void _loadMoreStudents() {
+    final nextPage = _currentPage + 1;
+    final startIndex = _pageSize * _currentPage;
+    final endIndex = startIndex + _pageSize;
+    final newItems = _filteredStudents
+        .skip(startIndex)
+        .take(_pageSize)
+        .toList();
+
+    if (newItems.isNotEmpty) {
+      setState(() {
+        _paginatedStudents.addAll(newItems);
+        _currentPage = nextPage;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -63,12 +161,6 @@ class _HomePageAfterSectionState extends State<HomePageAfterSection> {
               child: ListView(
                 padding: EdgeInsets.fromLTRB(16.sp, 12.sp, 16.sp, 10.sp),
                 children: [
-                  SizedBox(height: 2.h),
-                  Text(
-                    '📚 School & Class Overview',
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  SizedBox(height: 2.h),
                   SchoolInfoCard(
                     school: school,
                     className: widget.className,
@@ -76,7 +168,8 @@ class _HomePageAfterSectionState extends State<HomePageAfterSection> {
                   ),
 
                   SizedBox(height: 3.h),
-                  _buildStudentPortalCard(context, colorScheme),
+
+                  _buildStudentActions(context, colorScheme),
                   SizedBox(height: 4.h),
                   Center(
                     child: Column(
@@ -111,139 +204,367 @@ class _HomePageAfterSectionState extends State<HomePageAfterSection> {
     );
   }
 
-  Widget _buildInfoCard(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+  Set<int> _selectedIds = {};
 
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.sp)),
-      elevation: 5,
-      shadowColor: colorScheme.primary.withOpacity(0.3),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [colorScheme.primary, colorScheme.secondary],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(15.sp)),
-            ),
-            padding: EdgeInsets.symmetric(vertical: 14.sp, horizontal: 16.sp),
-            child: Row(
-              children: [
-                const Icon(Icons.info, color: Colors.white),
-                SizedBox(width: 10.sp),
-                Text(
-                  'School & Class Info',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 18.sp,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.all(14.sp),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _infoRow(Icons.domain, 'School Name', school.schoolName),
-                _infoRow(Icons.code, 'School Code', '${school.schoolCode}'),
-                _infoRow(Icons.class_, 'Class', widget.className),
-                _infoRow(Icons.group, 'Section', widget.section),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
+  Map<String, int> _getStatusCounts() {
+    final counts = <String, int>{
+      'All': _allStudents.length,
+      'Examined': 0,
+      'Absent': 0,
+      'Refused': 0,
+    };
+
+    for (final student in _allStudents) {
+      final status = student.examination;
+      if (counts.containsKey(status)) {
+        counts[status] = counts[status]! + 1;
+      }
+    }
+
+    return counts;
   }
 
-  Widget _buildStudentPortalCard(
-    BuildContext context,
-    ColorScheme colorScheme,
-  ) {
-    return Card(
-      color: colorScheme.surface,
-      elevation: 5,
-      margin: EdgeInsets.symmetric(vertical: 1.h),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.sp)),
-      child: ExpansionTile(
-        leading: Icon(Icons.school_rounded, color: colorScheme.primary),
-        title: Text(
-          'Student Portal',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            color: colorScheme.secondary,
+  Widget _buildStudentActions(BuildContext context, ColorScheme colorScheme) {
+    final selectionMode = _selectedIds.isNotEmpty;
+    final statusCounts = _getStatusCounts();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ElevatedButton.icon(
+          onPressed: () async {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => StudentDemographicScreen(
+                  className: widget.className,
+                  section: widget.section,
+                  school: school,
+                  isarService: widget.isarService,
+                ),
+              ),
+            );
+            await _loadStudents(); // Refresh after return
+          },
+          icon: const Icon(Icons.person_add),
+          label: const Text('Add Student'),
+          style: ElevatedButton.styleFrom(
+            padding: EdgeInsets.symmetric(vertical: 14.sp),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12.sp),
+            ),
           ),
         ),
-        children: [
-          ListTile(
-            leading: Icon(Icons.person_add, color: colorScheme.secondary),
-            title: const Text('Add Student Information'),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => StudentDetailScreen(
-                    className: widget.className,
-                    section: widget.section,
-                    school: school,
-                  ),
-                ),
-              );
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.list_alt, color: colorScheme.primary),
-            title: const Text('View Students'),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ViewStudentsPage(
-                    school: school,
-                    className: widget.className,
-                    section: widget.section,
-                  ),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
 
-  Widget _infoRow(IconData icon, String label, String value) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 0.7.h),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 18.sp, color: Colors.grey[700]),
-          SizedBox(width: 2.w),
-          Expanded(
-            child: RichText(
-              text: TextSpan(
-                style: TextStyle(fontSize: 16.sp, color: Colors.black),
+        SizedBox(height: 2.h),
+
+        TextField(
+          controller: _searchController,
+          decoration: const InputDecoration(
+            prefixIcon: Icon(Icons.search),
+            border: OutlineInputBorder(),
+            hintText: 'Search by name or roll number',
+          ),
+        ),
+        SizedBox(height: 1.5.h),
+
+        Wrap(
+          spacing: 8.sp,
+          children: _examinationOptions.map((status) {
+            final isSelected = _selectedExamination == status;
+            final icon = status == 'Examined'
+                ? Icons.check_circle
+                : status == 'Absent'
+                ? Icons.cancel
+                : status == 'Refused'
+                ? Icons.block
+                : Icons.list;
+            return ChoiceChip(
+              label: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  TextSpan(
-                    text: '$label: ',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  TextSpan(text: value),
+                  Icon(icon, size: 18, color: isSelected ? Colors.white : null),
+                  const SizedBox(width: 4),
+                  Text('$status (${statusCounts[status] ?? 0})'),
                 ],
               ),
+              selected: isSelected,
+              onSelected: (_) {
+                setState(() {
+                  _selectedExamination = status;
+                  _applyFilters();
+                });
+              },
+              selectedColor: colorScheme.primary,
+              labelStyle: TextStyle(color: isSelected ? Colors.white : null),
+            );
+          }).toList(),
+        ),
+
+        SizedBox(height: 2.h),
+        if (_filteredStudents.isNotEmpty)
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 1.h),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.chevron_left),
+                  onPressed: _currentPage > 1
+                      ? () => setState(() {
+                          _currentPage--;
+                          _updatePaginatedList();
+                        })
+                      : null,
+                ),
+                Text('Page $_currentPage of $_totalPages'),
+                IconButton(
+                  icon: const Icon(Icons.chevron_right),
+                  onPressed: _currentPage < _totalPages
+                      ? () => setState(() {
+                          _currentPage++;
+                          _updatePaginatedList();
+                        })
+                      : null,
+                ),
+              ],
             ),
           ),
-        ],
-      ),
+        SizedBox(height: 1.h),
+        if (_filteredStudents.isEmpty)
+          const Text('No matching students found.')
+        else
+          ListView.builder(
+            controller: _scrollController,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _paginatedStudents.length,
+            itemBuilder: (context, index) {
+              final student = _paginatedStudents[index];
+              final selected = _selectedIds.contains(student.id);
+
+              return Dismissible(
+                key: Key(student.id.toString()),
+                direction: DismissDirection.endToStart,
+                background: Container(
+                  color: Colors.red,
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 20),
+                  child: const Icon(Icons.delete, color: Colors.white),
+                ),
+                confirmDismiss: (_) async {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (_) => AlertDialog(
+                      title: const Text('Delete Student'),
+                      content: Text(
+                        'Are you sure you want to delete ${student.name}?',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('Cancel'),
+                        ),
+                        ElevatedButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: const Text('Delete'),
+                        ),
+                      ],
+                    ),
+                  );
+                  return confirm ?? false;
+                },
+                onDismissed: (_) async {
+                  await widget.isarService.deleteStudent(student.id);
+                  await _loadStudents();
+                },
+                child: GestureDetector(
+                  onLongPress: () {
+                    setState(() => _selectedIds.add(student.id));
+                  },
+                  onTap: () {
+                    if (_selectedIds.isNotEmpty) {
+                      setState(() {
+                        if (selected) {
+                          _selectedIds.remove(student.id);
+                        } else {
+                          _selectedIds.add(student.id);
+                        }
+                      });
+                    }
+                  },
+                  child: Card(
+                    color: selected
+                        ? colorScheme.primary.withOpacity(0.2)
+                        : null,
+                    child: ListTile(
+                      leading: _selectedIds.isNotEmpty
+                          ? Checkbox(
+                              value: selected,
+                              onChanged: (_) {
+                                setState(() {
+                                  if (selected) {
+                                    _selectedIds.remove(student.id);
+                                  } else {
+                                    _selectedIds.add(student.id);
+                                  }
+                                });
+                              },
+                            )
+                          : null,
+                      title: Text('Student Name: ${student.name}'),
+                      subtitle: Text('Roll No: ${student.rollNumber}'),
+                      trailing: Text('Status: ${student.examination}'),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        if (_filteredStudents.isNotEmpty)
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 1.h),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.chevron_left),
+                  onPressed: _currentPage > 1
+                      ? () => setState(() {
+                          _currentPage--;
+                          _updatePaginatedList();
+                        })
+                      : null,
+                ),
+                Text('Page $_currentPage of $_totalPages'),
+                IconButton(
+                  icon: const Icon(Icons.chevron_right),
+                  onPressed: _currentPage < _totalPages
+                      ? () => setState(() {
+                          _currentPage++;
+                          _updatePaginatedList();
+                        })
+                      : null,
+                ),
+              ],
+            ),
+          ),
+        SizedBox(height: 1.h),
+        if (selectionMode)
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 1.h),
+            child: Wrap(
+              spacing: 0.5.w,
+              runSpacing: 1.h,
+              alignment: WrapAlignment.spaceBetween,
+              children: [
+                if (_selectedIds.length == 1)
+                  SizedBox(
+                    width: 90.w / (_selectedIds.length == 1 ? 2 : 2),
+                    height: 9.h,
+
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.edit),
+                      label: const Text('Update'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        padding: EdgeInsets.symmetric(vertical: 15.sp),
+                      ),
+                      onPressed: () async {
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (_) => AlertDialog(
+                            title: const Text('Confirm Edit'),
+                            content: const Text(
+                              'Are you sure you want to update the selected student?',
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, false),
+                                child: const Text('Cancel'),
+                              ),
+                              ElevatedButton(
+                                onPressed: () => Navigator.pop(context, true),
+                                child: const Text('Update'),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirm == true) {
+                          final studentId = _selectedIds.first;
+                          final student = _filteredStudents.firstWhere(
+                            (s) => s.id == studentId,
+                          );
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => StudentDetailScreen(
+                                className: widget.className,
+                                section: widget.section,
+                                school: school,
+                                isarService: widget.isarService,
+                                existingStudent:
+                                    student, // This should be handled in your StudentDetailScreen
+                              ),
+                            ),
+                          ).then((_) async {
+                            await _loadStudents(); // Reload after update
+                            setState(() => _selectedIds.clear());
+                          });
+                        }
+                      },
+                    ),
+                  ),
+                if (_selectedIds.isNotEmpty)
+                  SizedBox(
+                    width: _selectedIds.length == 1 ? 90.w / 2 : 90.w,
+                    height: 9.h,
+
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.delete),
+                      label: Text('Delete (${_selectedIds.length})'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        padding: EdgeInsets.symmetric(vertical: 15.sp),
+                      ),
+                      onPressed: () async {
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (_) => AlertDialog(
+                            title: const Text('Confirm Delete'),
+                            content: Text(
+                              'Are you sure you want to delete ${_selectedIds.length} selected student(s)?',
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, false),
+                                child: const Text('Cancel'),
+                              ),
+                              ElevatedButton(
+                                onPressed: () => Navigator.pop(context, true),
+                                child: const Text('Delete'),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirm == true) {
+                          await widget.isarService.deleteMultipleStudents(
+                            _selectedIds.toList(),
+                          );
+                          await _loadStudents();
+                          setState(() => _selectedIds.clear());
+                        }
+                      },
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        SizedBox(height: 2.h),
+
+        const Text(
+          '* Long-press a Student to select for updating & Deleting or left swipe for delete',
+        ),
+      ],
     );
   }
 }

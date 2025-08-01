@@ -6,14 +6,22 @@ part 'student.g.dart';
 @collection
 class Student {
   Id id = Isar.autoIncrement;
+  late String enrollNo; // Enrollment No
+  late int rollNumber; // Roll Number
+  late String name; // Student Name
+  late String gender; // Gender
+  late DateTime dob; // Date of Birth
+  late String examination; // Examination
+  late String wearGlass; // Wear Glass
+  late String contactLens; // Contact Lens
+  late String cutoffUVA1; // Cutoff UVA1
+  late String cutoffUVA2; // Cutoff UVA2
+  late String eyeTest; // Eye Test
+  late String referred; // Referred
+  late String phone; // Phone Number
 
-  late String name;
-  late int rollNumber;
-  late String gender;
-  late int age;
-
-  late String className;
-  late String section;
+  late String className; // Class
+  late String section; // Section
 
   final school = IsarLink<School>(); // Link to School
 
@@ -22,30 +30,49 @@ class Student {
   factory Student.fromJson(Map<String, dynamic> json) {
     final student = Student()
       ..id = json['id'] as int? ?? Isar.autoIncrement
-      ..name = json['name'] as String
+      ..enrollNo = json['enrollNo'] as String
       ..rollNumber = json['rollNumber'] as int
+      ..name = json['name'] as String
       ..gender = json['gender'] as String
-      ..age = json['age'] as int
+      ..dob = DateTime.parse(json['dob'] as String)
+      ..examination = json['examination'] as String
+      ..wearGlass = json['wearGlass'] as String
+      ..contactLens = json['contactLens'] as String
+      ..cutoffUVA1 = json['cutoffUVA1'] as String
+      ..cutoffUVA2 = json['cutoffUVA2'] as String
+      ..eyeTest = json['eyeTest'] as String
+      ..referred = json['referred'] as String
+      ..phone = json['phone'] as String
       ..className = json['className'] as String
       ..section = json['section'] as String;
 
-    // ⚠ Note: you cannot restore IsarLink<School> directly from JSON.
-    // Instead, you might store schoolId or schoolCode in JSON and link later in code.
-    // e.g. store: json['schoolId'] or json['schoolCode']
+    // Note: link to school must be established manually via .school.value = someSchool
     return student;
   }
+
+  set schoolCode(schoolCode) {}
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'name': name,
+      'enrollNo': enrollNo,
       'rollNumber': rollNumber,
+      'name': name,
       'gender': gender,
-      'age': age,
+      'dob': dob.toIso8601String(),
+      'examination': examination,
+      'wearGlass': wearGlass,
+      'contactLens': contactLens,
+      'cutoffUVA1': cutoffUVA1,
+      'cutoffUVA2': cutoffUVA2,
+      'eyeTest': eyeTest,
+      'referred': referred,
+      'phone': phone,
       'className': className,
       'section': section,
-      // ⚠ Instead of storing the whole School object, store its id or code
-      'schoolId': school.value?.id,
+      'schoolId': school.value?.id, // optionally store related school ID
     };
   }
 }
+
+

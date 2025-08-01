@@ -1,246 +1,422 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
+import 'package:myproject/config.dart';
+import 'package:responsive_sizer/responsive_sizer.dart';
 import 'package:myproject/components/appbar_component.dart';
 import 'package:myproject/components/school_info_card.dart';
 import 'package:myproject/models/school.dart';
-import 'package:responsive_sizer/responsive_sizer.dart';
-import 'package:intl/intl.dart';
+import 'package:myproject/models/student.dart';
+import 'package:myproject/services/DB/isar_services.dart';
 
 class StudentDetailScreen extends StatefulWidget {
-  final String className;
-  final String section;
+  final String className, section;
   final School school;
+  final IsarService isarService;
+  final Student? existingStudent;
 
   const StudentDetailScreen({
     super.key,
     required this.className,
     required this.section,
     required this.school,
+    required this.isarService,
+    this.existingStudent,
   });
 
   @override
   State<StudentDetailScreen> createState() => _StudentDetailScreenState();
 }
 
+Widget _buildLabel(String text) => Padding(
+  padding: EdgeInsets.only(bottom: 1.h, top: 1.h),
+  child: Text(
+    text,
+    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17.sp),
+  ),
+);
+
 class _StudentDetailScreenState extends State<StudentDetailScreen> {
   final _formKey = GlobalKey<FormState>();
+  final enrollNoController = TextEditingController();
+  final rollNoController = TextEditingController();
+  final nameController = TextEditingController();
+  final dobController = TextEditingController();
+  final phoneController = TextEditingController();
+  final FocusNode enrollFocus = FocusNode();
 
-  final TextEditingController enrollNoController = TextEditingController();
-  final TextEditingController rollNoController = TextEditingController();
-  final TextEditingController nameController = TextEditingController();
-  final TextEditingController dobController = TextEditingController();
-  final TextEditingController phoneController = TextEditingController();
+  String? sex,
+      examination,
+      wearGlass,
+      contactLens,
+      cutoffUVA1,
+      cutoffUVA2,
+      eyeTest,
+      referred;
 
-  String? sex;
-  String? examination;
-  String? wearGlass;
-  String? contactLens;
-  String? cutoffUVA1;
-  String? cutoffUVA2;
-  String? eyeTest;
-  String? referred;
+  final options = {
+    'sex': ['Male', 'Female', 'Other'],
+    'exam': ['Examined', 'Absent', 'Refused'],
+    'yesno': ['Yes', 'No'],
+    'cutoff': ['Can read 6/9', "Can't read 6/9"],
+    'eyeTest': [
+      'Never',
+      'Within last 1 year',
+      'During last 1-2 years',
+      'Beyond 2 years',
+      'Don’t Know',
+    ],
+    'referred': [
+      'Yes, as child uses glasses/ Contact Lens',
+      'Yes Unaided Vision <6/9 in any eye',
+      'Not Referred',
+      'Control Case',
+    ],
+  };
 
-  final List<String> _sexOptions = ['Male', 'Female', 'Other'];
-  final List<String> _examinationOptions = ['Examined', 'Absent', 'Refused'];
-  final List<String> _yesNoOptions = ['Yes', 'No'];
-  final List<String> _cutoffOptions = ['Can read 6/9', "Can't read 6/9"];
-  final List<String> _eyeTestOptions = [
-    'Never',
-    'Within last 1 year',
-    'During last 1-2 years',
-    'Beyond 2 years',
-    'Don’t Know',
-  ];
-  final List<String> _referredOptions = [
-    'Yes, as child uses glasses/ Contact Lens',
-    'Yes Unaided Vision <6/9 in any eye',
-    'Not Referred',
-    'Control Case',
-  ];
+@override
+  void initState() {
+    super.initState();
 
-  Future<void> _selectDateOfBirth() async {
-    final DateTime? picked = await showDatePicker(
+    final s = widget.existingStudent;
+    if (s != null) {
+      enrollNoController.text = s.enrollNo;
+      rollNoController.text = s.rollNumber.toString();
+      nameController.text = s.name;
+      dobController.text = DateFormat('dd-MM-yyyy').format(s.dob);
+      phoneController.text = s.phone;
+
+      sex = s.gender;
+      examination = s.examination;
+      wearGlass = s.wearGlass;
+      contactLens = s.contactLens;
+      cutoffUVA1 = s.cutoffUVA1;
+      cutoffUVA2 = s.cutoffUVA2;
+      eyeTest = s.eyeTest;
+      referred = s.referred;
+    }
+  }
+
+  Future<void> _selectDOB() async {
+    final picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now().subtract(const Duration(days: 365 * 10)),
       firstDate: DateTime(1950),
       lastDate: DateTime.now(),
     );
     if (picked != null) {
-      dobController.text = DateFormat('yyyy-MM-dd').format(picked);
+      dobController.text = DateFormat('dd-MM-yyyy').format(picked);
     }
   }
 
-  Widget _buildLabel(String text) => Padding(
-    padding: EdgeInsets.only(bottom: 0.5.h, top: 1.h),
-    child: Text(
-      text,
-      style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17.sp),
-    ),
-  );
+  void _resetForm() {
+    enrollNoController.clear();
+    rollNoController.clear();
+    nameController.clear();
+    dobController.clear();
+    phoneController.clear();
+    setState(() {
+      sex = null;
+      examination = null;
+      wearGlass = null;
+      contactLens = null;
+      cutoffUVA1 = null;
+      cutoffUVA2 = null;
+      eyeTest = null;
+      referred = null;
+    });
+    FocusScope.of(context).requestFocus(enrollFocus);
+  }
+
+  Future<void> _saveStudent() async {
+    final isMinimalValid =
+        enrollNoController.text.isNotEmpty &&
+        rollNoController.text.isNotEmpty &&
+        nameController.text.isNotEmpty &&
+        dobController.text.isNotEmpty &&
+        sex != null &&
+        examination != null;
+
+    if (examination != 'Examined') {
+      if (isMinimalValid) {
+        await _confirmSaveAndSubmit(
+          'Student not examined. Save basic info?',
+          basic: true,
+        );
+      } else {
+        _showMsg('Please fill Enrollment, Name, Roll Number, Gender & Examination');
+      }
+      return;
+    }
+
+    if (_formKey.currentState!.validate() &&
+        [
+          sex,
+          wearGlass,
+          contactLens,
+          cutoffUVA1,
+          cutoffUVA2,
+          eyeTest,
+          referred,
+        ].every((v) => v != null)) {
+      await _confirmSaveAndSubmit(
+        'All student details will be saved. Proceed?',
+      );
+    } else {
+      final missing = {
+        'Gender': sex,
+        'Wear Glass': wearGlass,
+        'Contact Lens': contactLens,
+        'Cutoff UVA1': cutoffUVA1,
+        'Cutoff UVA2': cutoffUVA2,
+        'Eye Test': eyeTest,
+        'Referred': referred,
+      }.entries.where((e) => e.value == null).map((e) => e.key).join(', ');
+      _showMsg('Missing fields: $missing');
+
+    }
+  }
+
+  Future<void> _storeStudent({bool basic = false}) async {
+    final student = widget.existingStudent ?? Student();
+     student 
+      ..enrollNo = enrollNoController.text.trim()
+      ..rollNumber = int.tryParse(rollNoController.text.trim()) ?? 0
+      ..name = nameController.text.trim()
+      ..gender = sex ?? ''
+      ..dob = DateFormat('dd-MM-yyyy').parse(dobController.text.trim())
+      ..examination = examination ?? ''
+      ..className = widget.className
+      ..section = widget.section
+      ..school.value = widget.school; // ✅ Important: link the school
+
+    if (!basic) {
+      student
+        ..wearGlass = wearGlass!
+        ..contactLens = contactLens!
+        ..cutoffUVA1 = cutoffUVA1!
+        ..cutoffUVA2 = cutoffUVA2!
+        ..eyeTest = eyeTest!
+        ..referred = referred!
+        ..phone = phoneController.text.trim();
+    } else {
+      // If not examined, initialize optional fields with empty string to prevent Isar crash
+      student
+        ..wearGlass = ''
+        ..contactLens = ''
+        ..cutoffUVA1 = ''
+        ..cutoffUVA2 = ''
+        ..eyeTest = ''
+        ..referred = ''
+        ..phone = '';
+    }
+    
+    await widget.isarService.addOrUpdateStudent(student);
+       _showMsg('Student saved successfully');
+  }
+
+ Future<void> _confirmSaveAndSubmit(String msg, {bool basic = false}) async {
+    final bool? result = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Confirm Save'),
+        content: Text(msg),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false), // ❌ Cancel => false
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              await _storeStudent(basic: basic); // ✅ Save student
+              Navigator.of(context).pop(true); // ✅ Submit => true
+            },
+            child: const Text('Confirm'),
+          ),
+        ],
+      ),
+    );
+
+
+    if (result == true) {
+      // User confirmed and student was saved
+      config.logger.d("pop successfull");
+      _resetForm(); // or Navigator.pop(), etc.
+      config.logger.d("Value set");
+    }
+
+
+  }
+
+  void _showMsg(String msg) =>
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
+    final theme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: appbarComponent(context),
       body: SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.all(16.sp),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildHeader(colorScheme),
-                _buildLabel('Enrollment No'),
-                _buildTextField(enrollNoController, ''),
-                _buildLabel('Roll Number'),
-                _buildTextField(rollNoController, ''),
-                _buildLabel('Student Name'),
-                _buildTextField(nameController, ''),
-
-                _buildChipsGroup(
-                  'Gender',
-                  _sexOptions,
-                  sex,
-                  (val) => setState(() => sex = val),
-                ),
-
-                _buildLabel('Date of Birth'),
-                _buildDateField(dobController, ''),
-
-                _buildChipsGroup(
-                  'Examination',
-                  _examinationOptions,
-                  examination,
-                  (val) => setState(() => examination = val),
-                ),
-                _buildChipsGroup(
+        padding: EdgeInsets.all(15.sp),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SchoolInfoCard(
+                school: widget.school,
+                className: widget.className,
+                section: widget.section,
+              ),
+              _buildLabel('Enrollment Number'),
+               _buildField('', enrollNoController, focusNode: enrollFocus),
+              _buildLabel('Roll Number'),
+              _buildField( '',
+                rollNoController,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                keyboardType: TextInputType.number,
+              ),
+              _buildLabel('Student Name'),
+              _buildField('', nameController),
+              _buildChips(
+                'Gender',
+                options['sex']!,
+                sex,
+                (val) => setState(() => sex = val),
+              ),
+              _buildLabel('Date of Birth'),
+              _buildDateField('', dobController),
+              _buildChips('Examination', options['exam']!, examination, (val) {
+                setState(() {
+                  examination = val;
+                  if (val != 'Examined') {
+                    wearGlass = '';
+                    contactLens = '';
+                    cutoffUVA1 = '';
+                    cutoffUVA2 = '';
+                    eyeTest = '';
+                    referred = '';
+                    phoneController.clear();
+                  }
+                });
+              }),
+              if (examination == 'Examined') ...[
+                _buildChips(
                   'Wear Glass',
-                  _yesNoOptions,
+                  options['yesno']!,
                   wearGlass,
-                  (val) => setState(() => wearGlass = val),
+                  (v) => setState(() => wearGlass = v),
                 ),
-                _buildChipsGroup(
+                _buildChips(
                   'Contact Lens',
-                  _yesNoOptions,
+                  options['yesno']!,
                   contactLens,
-                  (val) => setState(() => contactLens = val),
+                  (v) => setState(() => contactLens = v),
                 ),
-
-                _buildChipsGroup(
+                _buildChips(
                   'Cutoff UVA1',
-                  _cutoffOptions,
+                  options['cutoff']!,
                   cutoffUVA1,
-                  (val) => setState(() => cutoffUVA1 = val),
+                  (v) => setState(() => cutoffUVA1 = v),
                 ),
-                _buildChipsGroup(
+                _buildChips(
                   'Cutoff UVA2',
-                  _cutoffOptions,
+                  options['cutoff']!,
                   cutoffUVA2,
-                  (val) => setState(() => cutoffUVA2 = val),
+                  (v) => setState(() => cutoffUVA2 = v),
                 ),
-
-                _buildChipsGroup(
+                _buildChips(
                   'Eye Test',
-                  _eyeTestOptions,
+                  options['eyeTest']!,
                   eyeTest,
-                  (val) => setState(() => eyeTest = val),
+                  (v) => setState(() => eyeTest = v),
                 ),
-                _buildChipsGroup(
-                  'Referred',
-                  _referredOptions,
+                _buildChips(
+                  'Reason for Referred to Optometrist',
+                  options['referred']!,
                   referred,
-                  (val) => setState(() => referred = val),
+                  (v) => setState(() => referred = v),
                 ),
-
-                // ✅ Phone number with validation
-                _buildTextField(
+                _buildLabel('Phone Number'),
+                _buildField('',
                   phoneController,
-                  'Phone Number',
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
+                  keyboardType: TextInputType.phone,
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty)
                       return 'Please enter Phone Number';
-                    } else if (!RegExp(r'^[0-9]{10}$').hasMatch(value.trim())) {
+                    if (!RegExp(r'^[0-9]{10}$').hasMatch(v))
                       return 'Enter a valid 10-digit phone number';
-                    }
                     return null;
                   },
                 ),
-
-                SizedBox(height: 3.h),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 5.w,
-                        vertical: 1.8.h,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      backgroundColor: colorScheme.primary,
+              ],
+              if (examination == 'Absent' || examination == 'Refused')
+                Padding(
+                  padding: EdgeInsets.symmetric(vertical: 2.h),
+                  child: Container(
+                    padding: EdgeInsets.all(12.sp),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade100,
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    onPressed: _saveStudent,
-                    icon: const Icon(Icons.save),
-                    label: const Text('Save Student'),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.warning_amber_rounded,
+                          color: Colors.deepOrange,
+                        ),
+                        SizedBox(width: 2.w),
+                        Expanded(
+                          child: Text(
+                            'Student not examined. Only basic info will be saved.',
+                            style: TextStyle(
+                              fontSize: 15.sp,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ],
-            ),
+              SizedBox(height: 3.h),
+              ElevatedButton.icon(
+                onPressed: _saveStudent,
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 5.w,
+                    vertical: 1.8.h,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  backgroundColor: theme.primary,
+                ),
+                icon: const Icon(Icons.save),
+                label: const Text('Save Student'),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  void _saveStudent() {
-    if (_formKey.currentState!.validate() &&
-        sex != null &&
-        examination != null &&
-        wearGlass != null &&
-        contactLens != null &&
-        cutoffUVA1 != null &&
-        cutoffUVA2 != null &&
-        eyeTest != null &&
-        referred != null) {
-      print('Student saved');
-      Navigator.pop(context);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please complete all fields')),
-      );
-    }
-  }
-
-  Widget _buildHeader(ColorScheme colorScheme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(height: 0.5.h),
-        SchoolInfoCard(
-          school: widget.school,
-          className: widget.className,
-          section: widget.section,
-        ),
-        SizedBox(height: 2.h),
-      ],
-    );
-  }
-
-  Widget _buildTextField(
-    TextEditingController controller,
-    String label, {
+ Widget _buildField(
+    String label,
+    TextEditingController ctrl, {
+    FocusNode? focusNode, // ADD THIS
+    List<TextInputFormatter>? inputFormatters,
+    TextInputType? keyboardType,
     String? Function(String?)? validator,
   }) {
     return Padding(
       padding: EdgeInsets.only(bottom: 2.h),
       child: TextFormField(
-        controller: controller,
-        textAlign: TextAlign.left,
-        keyboardType: label.toLowerCase().contains('phone')
-            ? TextInputType.phone
-            : null,
+        controller: ctrl,
+        focusNode: focusNode, // ADD THIS
+        inputFormatters: inputFormatters,
+        keyboardType: keyboardType,
         decoration: InputDecoration(
           labelText: label,
           labelStyle: TextStyle(fontSize: 18.sp),
@@ -248,37 +424,34 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
         ),
         validator:
             validator ??
-            (value) =>
-                (value == null || value.isEmpty) ? 'Please enter $label' : null,
+            (v) => (v == null || v.isEmpty) ? 'Please enter $label' : null,
       ),
     );
   }
 
-  Widget _buildDateField(TextEditingController controller, String label) {
+  Widget _buildDateField(String label, TextEditingController ctrl) {
     return Padding(
       padding: EdgeInsets.only(bottom: 2.h),
       child: TextFormField(
-        controller: controller,
+        controller: ctrl,
         readOnly: true,
-        onTap: _selectDateOfBirth,
-        textAlign: TextAlign.left,
+        onTap: _selectDOB,
         decoration: InputDecoration(
           labelText: label,
           labelStyle: TextStyle(fontSize: 18.sp),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-
           suffixIcon: const Icon(Icons.calendar_today),
         ),
-        validator: (value) =>
-            (value == null || value.isEmpty) ? 'Please select $label' : null,
+        validator: (v) =>
+            (v == null || v.isEmpty) ? 'Please select $label' : null,
       ),
     );
   }
 
-  Widget _buildChipsGroup(
+  Widget _buildChips(
     String title,
     List<String> options,
-    String? selectedValue,
+    String? selected,
     Function(String) onSelected,
   ) {
     return Padding(
@@ -293,16 +466,16 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
           SizedBox(height: 0.5.h),
           Wrap(
             spacing: 8,
-            runSpacing: -8,
-            children: options.map((option) {
-              final bool selected = option == selectedValue;
-              return ChoiceChip(
-                label: Text(option),
-                selected: selected,
-                onSelected: (_) => onSelected(option),
-                labelStyle: TextStyle(fontSize: 15.sp),
-              );
-            }).toList(),
+            children: options
+                .map(
+                  (option) => ChoiceChip(
+                    label: Text(option),
+                    selected: selected == option,
+                    onSelected: (_) => onSelected(option),
+                    labelStyle: TextStyle(fontSize: 15.sp),
+                  ),
+                )
+                .toList(),
           ),
         ],
       ),

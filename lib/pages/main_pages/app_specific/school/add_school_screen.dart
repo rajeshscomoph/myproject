@@ -380,6 +380,8 @@ Timer? _debounce;
     sectionControllers[className] = controller;
     return Card(
       margin: EdgeInsets.symmetric(vertical: 1.h),
+      shadowColor: Colors.black54,
+      elevation: 4,
       child: Padding(
         padding: EdgeInsets.all(10.sp),
         child: Column(
@@ -389,7 +391,7 @@ Timer? _debounce;
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Class: $className',
+                  'CLASS: $className',
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
                 IconButton(
@@ -397,7 +399,17 @@ Timer? _debounce;
                   onPressed: () => _removeClass(className),
                   icon: const Icon(Icons.delete, color: Colors.red),
                 ),
+                
               ],
+            ),
+            const Row (
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'SECTIONS',
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ]
             ),
             Wrap(
               spacing: 8,
@@ -413,7 +425,7 @@ Timer? _debounce;
                 Expanded(
                   child: TextFormField(
                     controller: controller,
-                    decoration: _inputDecoration(hintText: 'Section name'),
+                    decoration: _inputDecoration(),
                   ),
                 ),
                 SizedBox(width: 4.w),
@@ -591,9 +603,8 @@ Timer? _debounce;
                                   FilteringTextInputFormatter.digitsOnly,
                                 ],
                                 decoration: _inputDecoration(
-                                  hintText: 'Class number',
-                                  helperText:
-                                      'Only numeric values are allowed (e.g., 1, 2, 10)',
+                                 
+                                  
                                 ),
                               ),
                             ),

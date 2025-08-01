@@ -104,7 +104,6 @@ class _ViewSchoolsScreenState extends State<ViewSchoolsScreen> {
   }
 
   bool get _selectionMode => _selectedIds.isNotEmpty;
-  bool get _singleSelection => _selectedIds.length == 1;
 
   void _handleUpdateSchool() async {
     final confirm = await showDialog<bool>(
@@ -393,7 +392,7 @@ class _ViewSchoolsScreenState extends State<ViewSchoolsScreen> {
                               },
                             ),
                     ),
-                    if (_singleSelection)
+                    if (_selectionMode)
                       Padding(
                         padding: EdgeInsets.all(16.sp),
                         child: ElevatedButton.icon(
