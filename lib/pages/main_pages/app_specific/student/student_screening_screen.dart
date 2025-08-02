@@ -62,26 +62,29 @@ class _StudentScreeningScreenState extends State<StudentScreeningScreen> {
   Future<void> _saveStudent() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final s = widget.student
+    widget.student
       ..wearGlass = wearGlass ?? ''
       ..contactLens = contactLens ?? ''
       ..cutoffUVA1 = cutoffUVA1 ?? ''
       ..cutoffUVA2 = cutoffUVA2 ?? ''
       ..eyeTest = eyeTest ?? ''
       ..referred = referred ?? ''
-      ..phone = phoneController.text.trim();
+      ..phone = phoneController.text.trim()
+      ..school.value = widget.school; // ensure link is retained
 
-    await widget.isarService.addOrUpdateStudent(s);
+    await widget.isarService.addOrUpdateStudent(widget.student);
 
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text("Student saved")));
+    ).showSnackBar(const SnackBar(content: Text("Student record updated")));
+
+    final schoolCode = widget.school.schoolCode ?? '';
 
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
         builder: (_) => HomePageAfterSection(
-          schoolCode: widget.school.schoolCode,
+          schoolCode: schoolCode,
           className: widget.student.className,
           section: widget.student.section,
           isarService: widget.isarService,

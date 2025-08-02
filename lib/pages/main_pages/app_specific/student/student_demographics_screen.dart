@@ -1,4 +1,3 @@
-// student_demographic_screen.dart
 import 'package:flutter/material.dart';
 import 'package:myproject/components/appbar_component.dart';
 import 'package:myproject/components/school_info_card.dart';
@@ -12,7 +11,8 @@ class StudentDemographicScreen extends StatefulWidget {
   final String section;
   final dynamic school;
   final IsarService isarService;
- final Student? existingStudent;
+  final Student? existingStudent;
+
   const StudentDemographicScreen({
     super.key,
     required this.className,
@@ -27,9 +27,6 @@ class StudentDemographicScreen extends StatefulWidget {
       _StudentDemographicScreenState();
 }
 
-
-
-
 class _StudentDemographicScreenState extends State<StudentDemographicScreen> {
   final _formKey = GlobalKey<FormState>();
   final nameController = TextEditingController();
@@ -38,15 +35,14 @@ class _StudentDemographicScreenState extends State<StudentDemographicScreen> {
   String? selectedGender;
   String? selectedExamination;
   DateTime? dob;
-   bool showGenderError = false;
+  bool showGenderError = false;
   bool showExamError = false;
   bool showDobError = false;
-
 
   final List<String> _genders = ['Male', 'Female', 'Other'];
   final List<String> _examinations = ['Examined', 'Absent', 'Refused'];
 
-@override
+  @override
   void initState() {
     super.initState();
     final s = widget.existingStudent;
@@ -59,6 +55,7 @@ class _StudentDemographicScreenState extends State<StudentDemographicScreen> {
       selectedExamination = s.examination;
     }
   }
+
   Widget _buildLabel(String text) => Padding(
     padding: EdgeInsets.only(bottom: 1.h, top: 1.h),
     child: Text(
@@ -67,7 +64,7 @@ class _StudentDemographicScreenState extends State<StudentDemographicScreen> {
     ),
   );
 
-  Future<void> _saveStudent() async {
+  Future<Student?> _saveStudentLocally() async {
     final isValid = _formKey.currentState!.validate();
     setState(() {
       showDobError = dob == null;
@@ -82,10 +79,16 @@ class _StudentDemographicScreenState extends State<StudentDemographicScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please complete all fields.")),
       );
-      return;
+      return null;
     }
-final student = widget.existingStudent ?? Student();
-    Student()
+
+    final student = widget.existingStudent ?? Student();
+
+    if (widget.existingStudent != null) {
+      student.id = widget.existingStudent!.id;
+    }
+
+    student
       ..name = nameController.text.trim()
       ..enrollNo = enrollNoController.text.trim()
       ..rollNumber = int.tryParse(rollNumberController.text.trim()) ?? 0
@@ -93,17 +96,11 @@ final student = widget.existingStudent ?? Student();
       ..dob = dob!
       ..examination = selectedExamination!
       ..school.value = widget.school
-      ..schoolCode = widget.school.schoolCode
       ..className = widget.className
       ..section = widget.section;
 
     await widget.isarService.addOrUpdateStudent(student);
-
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text("Student added successfully")));
-
-    Navigator.pop(context);
+    return student;
   }
 
   Future<void> _pickDate() async {
@@ -153,7 +150,7 @@ final student = widget.existingStudent ?? Student();
   }
 
   @override
-   Widget build(BuildContext context) {
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: appbarComponent(context),
       body: Padding(
@@ -168,21 +165,18 @@ final student = widget.existingStudent ?? Student();
                 section: widget.section,
               ),
               SizedBox(height: 0.5.h),
-
               _buildLabel('Student Name'),
               TextFormField(
                 controller: nameController,
                 validator: (value) =>
                     value!.isEmpty ? 'Please enter name' : null,
               ),
-
               _buildLabel('Enrollment Number'),
               TextFormField(
                 controller: enrollNoController,
                 validator: (value) =>
                     value!.isEmpty ? 'Please enter enrollment number' : null,
               ),
-
               _buildLabel('Roll Number'),
               TextFormField(
                 controller: rollNumberController,
@@ -190,7 +184,6 @@ final student = widget.existingStudent ?? Student();
                 validator: (value) =>
                     value!.isEmpty ? 'Please enter roll number' : null,
               ),
-
               _buildChoiceChipField(
                 label: 'Gender',
                 options: _genders,
@@ -203,23 +196,17 @@ final student = widget.existingStudent ?? Student();
                 },
               ),
               if (showGenderError)
-                const Text('Please select gender',
-                    style: TextStyle(color: Colors.red)),
-
+                const Text(
+                  'Please select gender',
+                  style: TextStyle(color: Colors.red),
+                ),
               _buildLabel('Date of Birth'),
               InkWell(
                 onTap: _pickDate,
-                borderRadius: BorderRadius.circular(12.sp),
                 child: InputDecorator(
                   decoration: InputDecoration(
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12.sp),
-                    ),
+                    border: OutlineInputBorder(),
                     suffixIcon: const Icon(Icons.calendar_today),
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 12.sp,
-                      vertical: 10.sp,
-                    ),
                   ),
                   child: Text(
                     dob != null
@@ -236,9 +223,7 @@ final student = widget.existingStudent ?? Student();
                     style: TextStyle(color: Colors.red),
                   ),
                 ),
-
               SizedBox(height: 1.h),
-
               _buildChoiceChipField(
                 label: 'Examination',
                 options: _examinations,
@@ -251,69 +236,45 @@ final student = widget.existingStudent ?? Student();
                 },
               ),
               if (showExamError)
-                const Text('Please select examination status',
-                    style: TextStyle(color: Colors.red)),
+                const Text(
+                  'Please select examination status',
+                  style: TextStyle(color: Colors.red),
+                ),
 
-              /// 👓 Screening route
+              /// 👉 Proceed to Screening
               if (selectedExamination?.toLowerCase() == 'examined')
                 Padding(
                   padding: EdgeInsets.only(top: 2.h),
                   child: ElevatedButton.icon(
                     icon: const Icon(Icons.arrow_forward),
                     label: const Text("Proceed to Screening"),
-                    onPressed: () {
-                      final isValid = _formKey.currentState!.validate();
-                      setState(() {
-                        showDobError = dob == null;
-                        showGenderError = selectedGender == null;
-                        showExamError = selectedExamination == null;
-                      });
-
-                      if (!isValid || dob == null || selectedGender == null || selectedExamination == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Please complete all fields.")),
-                        );
-                        return;
-                      }
-
-                      final student = Student()
-                        ..name = nameController.text.trim()
-                        ..enrollNo = enrollNoController.text.trim()
-                        ..rollNumber = int.tryParse(rollNumberController.text.trim()) ?? 0
-                        ..gender = selectedGender ?? ''
-                        ..dob = dob ?? DateTime(2010)
-                        ..examination = selectedExamination ?? ''
-                        ..school.value = widget.school
-                        ..schoolCode = widget.school.schoolCode
-                        ..className = widget.className
-                        ..section = widget.section
-                        ..wearGlass = ''
-                        ..contactLens = ''
-                        ..cutoffUVA1 = ''
-                        ..cutoffUVA2 = ''
-                        ..eyeTest = ''
-                        ..referred = ''
-                        ..phone = '';
-
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => StudentScreeningScreen(
-                            student: student,
-                            isarService: widget.isarService,
-                            school: widget.school,
+                    onPressed: () async {
+                      final savedStudent = await _saveStudentLocally();
+                      if (savedStudent != null) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => StudentScreeningScreen(
+                              student: savedStudent,
+                              isarService: widget.isarService,
+                              school: widget.school,
+                            ),
                           ),
-                        ),
-                      );
+                        );
+                      }
                     },
                   ),
                 ),
-
               SizedBox(height: 3.h),
               ElevatedButton.icon(
                 icon: const Icon(Icons.save),
                 label: const Text('Save Student'),
-                onPressed: _saveStudent,
+                onPressed: () async {
+                  final saved = await _saveStudentLocally();
+                  if (saved != null) {
+                    Navigator.pop(context);
+                  }
+                },
               ),
             ],
           ),
@@ -322,4 +283,3 @@ final student = widget.existingStudent ?? Student();
     );
   }
 }
-

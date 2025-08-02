@@ -82,13 +82,18 @@ const StudentSchema = CollectionSchema(
       name: r'rollNumber',
       type: IsarType.long,
     ),
-    r'section': PropertySchema(
+    r'schoolCode': PropertySchema(
       id: 13,
+      name: r'schoolCode',
+      type: IsarType.string,
+    ),
+    r'section': PropertySchema(
+      id: 14,
       name: r'section',
       type: IsarType.string,
     ),
     r'wearGlass': PropertySchema(
-      id: 14,
+      id: 15,
       name: r'wearGlass',
       type: IsarType.string,
     )
@@ -131,6 +136,7 @@ int _studentEstimateSize(
   bytesCount += 3 + object.name.length * 3;
   bytesCount += 3 + object.phone.length * 3;
   bytesCount += 3 + object.referred.length * 3;
+  bytesCount += 3 + object.schoolCode.length * 3;
   bytesCount += 3 + object.section.length * 3;
   bytesCount += 3 + object.wearGlass.length * 3;
   return bytesCount;
@@ -155,8 +161,9 @@ void _studentSerialize(
   writer.writeString(offsets[10], object.phone);
   writer.writeString(offsets[11], object.referred);
   writer.writeLong(offsets[12], object.rollNumber);
-  writer.writeString(offsets[13], object.section);
-  writer.writeString(offsets[14], object.wearGlass);
+  writer.writeString(offsets[13], object.schoolCode);
+  writer.writeString(offsets[14], object.section);
+  writer.writeString(offsets[15], object.wearGlass);
 }
 
 Student _studentDeserialize(
@@ -180,8 +187,9 @@ Student _studentDeserialize(
   object.phone = reader.readString(offsets[10]);
   object.referred = reader.readString(offsets[11]);
   object.rollNumber = reader.readLong(offsets[12]);
-  object.section = reader.readString(offsets[13]);
-  object.wearGlass = reader.readString(offsets[14]);
+  object.schoolCode = reader.readString(offsets[13]);
+  object.section = reader.readString(offsets[14]);
+  object.wearGlass = reader.readString(offsets[15]);
   return object;
 }
 
@@ -221,6 +229,8 @@ P _studentDeserializeProp<P>(
     case 13:
       return (reader.readString(offset)) as P;
     case 14:
+      return (reader.readString(offset)) as P;
+    case 15:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -1907,6 +1917,136 @@ extension StudentQueryFilter
     });
   }
 
+  QueryBuilder<Student, Student, QAfterFilterCondition> schoolCodeEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'schoolCode',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Student, Student, QAfterFilterCondition> schoolCodeGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'schoolCode',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Student, Student, QAfterFilterCondition> schoolCodeLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'schoolCode',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Student, Student, QAfterFilterCondition> schoolCodeBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'schoolCode',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Student, Student, QAfterFilterCondition> schoolCodeStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'schoolCode',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Student, Student, QAfterFilterCondition> schoolCodeEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'schoolCode',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Student, Student, QAfterFilterCondition> schoolCodeContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'schoolCode',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Student, Student, QAfterFilterCondition> schoolCodeMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'schoolCode',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Student, Student, QAfterFilterCondition> schoolCodeIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'schoolCode',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Student, Student, QAfterFilterCondition> schoolCodeIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'schoolCode',
+        value: '',
+      ));
+    });
+  }
+
   QueryBuilder<Student, Student, QAfterFilterCondition> sectionEqualTo(
     String value, {
     bool caseSensitive = true,
@@ -2344,6 +2484,18 @@ extension StudentQuerySortBy on QueryBuilder<Student, Student, QSortBy> {
     });
   }
 
+  QueryBuilder<Student, Student, QAfterSortBy> sortBySchoolCode() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'schoolCode', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Student, Student, QAfterSortBy> sortBySchoolCodeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'schoolCode', Sort.desc);
+    });
+  }
+
   QueryBuilder<Student, Student, QAfterSortBy> sortBySection() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'section', Sort.asc);
@@ -2539,6 +2691,18 @@ extension StudentQuerySortThenBy
     });
   }
 
+  QueryBuilder<Student, Student, QAfterSortBy> thenBySchoolCode() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'schoolCode', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Student, Student, QAfterSortBy> thenBySchoolCodeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'schoolCode', Sort.desc);
+    });
+  }
+
   QueryBuilder<Student, Student, QAfterSortBy> thenBySection() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'section', Sort.asc);
@@ -2655,6 +2819,13 @@ extension StudentQueryWhereDistinct
     });
   }
 
+  QueryBuilder<Student, Student, QDistinct> distinctBySchoolCode(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'schoolCode', caseSensitive: caseSensitive);
+    });
+  }
+
   QueryBuilder<Student, Student, QDistinct> distinctBySection(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -2753,6 +2924,12 @@ extension StudentQueryProperty
   QueryBuilder<Student, int, QQueryOperations> rollNumberProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'rollNumber');
+    });
+  }
+
+  QueryBuilder<Student, String, QQueryOperations> schoolCodeProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'schoolCode');
     });
   }
 

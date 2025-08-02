@@ -24,7 +24,7 @@ class Student {
   late String section; // Section
 
   final school = IsarLink<School>(); // Link to School
-
+late String schoolCode;
   Student();
 
   factory Student.fromJson(Map<String, dynamic> json) {
@@ -50,9 +50,7 @@ class Student {
     return student;
   }
 
-  set schoolCode(schoolCode) {}
-
-  Map<String, dynamic> toJson() {
+   Map<String, dynamic> toJson() {
     return {
       'id': id,
       'enrollNo': enrollNo,
