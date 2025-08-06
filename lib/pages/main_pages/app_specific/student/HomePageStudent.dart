@@ -4,8 +4,6 @@ import 'package:myproject/components/appbar_component.dart';
 import 'package:myproject/components/school_info_card.dart';
 import 'package:myproject/models/school.dart';
 import 'package:myproject/models/student.dart';
-import 'package:myproject/pages/main_pages/app_specific/school/add_school_screen.dart';
-import 'package:myproject/pages/main_pages/app_specific/student/add_StudentDetail.dart';
 import 'package:myproject/pages/main_pages/app_specific/student/student_demographics_screen.dart';
 import 'package:myproject/services/DB/isar_services.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
@@ -37,6 +35,7 @@ class _HomePageAfterSectionState extends State<HomePageAfterSection> {
     'Examined',
     'Absent',
     'Refused',
+    'Referred',
   ];
   String _selectedExamination = 'All';
   final TextEditingController _searchController = TextEditingController();
@@ -96,13 +95,18 @@ class _HomePageAfterSectionState extends State<HomePageAfterSection> {
 
   void _applyFilters() {
     final query = _searchController.text.trim().toLowerCase();
+
     final results = _allStudents.where((student) {
       final matchesSearch =
           student.name.toLowerCase().contains(query) ||
           student.rollNumber.toString().contains(query);
-      final matchesExam =
-          _selectedExamination == 'All' ||
-          student.examination == _selectedExamination;
+
+      final matchesExam = _selectedExamination == 'All'
+          ? true
+          : _selectedExamination == 'Referred'
+          ? _isRefractionReferred(student)
+          : student.examination == _selectedExamination;
+
       return matchesSearch && matchesExam;
     }).toList();
 
@@ -111,6 +115,14 @@ class _HomePageAfterSectionState extends State<HomePageAfterSection> {
       _currentPage = 1;
       _updatePaginatedList();
     });
+  }
+
+bool _isRefractionReferred(Student student) {
+    const refractionReasons = [
+      'Yes, as child uses glasses/ Contact Lens',
+      'Yes Unaided Vision <6/9 in any eye',
+    ];
+    return refractionReasons.contains(student.referred);
   }
 
   void _updatePaginatedList() {
@@ -205,7 +217,7 @@ class _HomePageAfterSectionState extends State<HomePageAfterSection> {
     );
   }
 
-  Set<int> _selectedIds = {};
+  final Set<int> _selectedIds = {};
   
   get student => null;
 
@@ -215,12 +227,17 @@ class _HomePageAfterSectionState extends State<HomePageAfterSection> {
       'Examined': 0,
       'Absent': 0,
       'Refused': 0,
+      'Referred': 0, // new
     };
 
     for (final student in _allStudents) {
       final status = student.examination;
       if (counts.containsKey(status)) {
         counts[status] = counts[status]! + 1;
+      }
+
+      if (_isRefractionReferred(student)) {
+        counts['Referred'] = counts['Referred']! + 1;
       }
     }
 

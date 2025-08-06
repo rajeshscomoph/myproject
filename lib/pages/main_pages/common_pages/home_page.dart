@@ -1,14 +1,12 @@
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:myproject/components/appbar_component.dart';
+import 'package:myproject/components/footer_info_component.dart';
+import 'package:myproject/components/navigation_title_component.dart';
+import 'package:myproject/components/organisation_header_component.dart';
 import 'package:myproject/services/DB/isar_services.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
-import 'package:myproject/pages/main_pages/app_specific/school/add_school_screen.dart';
-import 'package:myproject/pages/main_pages/app_specific/school/view_schools_screen.dart';
-import '../../utility_pages/settings_page.dart';
-import '../../utility_pages/privacy_page.dart';
-import '../../utility_pages/about_us_page.dart';
-import '../../utility_pages/terms_page.dart';
+
 
 class HomePage extends StatelessWidget {
   final IsarService isarService;
@@ -21,7 +19,6 @@ class HomePage extends StatelessWidget {
   const HomePage({super.key, required this.isarService});
 
   String _getGreeting() {
-    
     final hour = DateTime.now().hour;
     if (hour < 12) return "Good morning";
     if (hour < 17) return "Good afternoon";
@@ -72,39 +69,7 @@ class HomePage extends StatelessWidget {
             SizedBox(height: 2.h),
 
           // Organization logo & details
-            Row(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8.sp),
-                  child: Image.asset(
-                    'assets/logos/logo.png',
-                    width: 18.w,
-                    height: 9.h,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                SizedBox(width: 4.w),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        organizationName,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      Text(
-                        "Dr. R.P. Centre for Ophthalmology",
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      Text(
-                        "AIIMS, New Delhi",
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+            OrganizationHeaderComponent(organizationName: organizationName),
             SizedBox(height: 2.h),
 
             // Motto / tagline animated
@@ -175,31 +140,17 @@ class HomePage extends StatelessWidget {
                   ),
                 ),
                 children: [
-                  ListTile(
-                    leading: Icon(Icons.add, color: colorScheme.secondary),
-                    title: const Text('Add School Information'),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              AddSchoolScreen(isarService: isarService),
-                        ),
-                      );
-                    },
+                  NavigationTileComponent(
+                    title: 'Add School Information',
+                    icon: Icons.add,
+                    routeName: '/add-school',
+                    arguments: isarService, // Will be passed to onGenerateRoute
                   ),
-                  ListTile(
-                    leading: Icon(Icons.list, color: colorScheme.primary),
-                    title: const Text('View Schools'),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              ViewSchoolsScreen(isarService: isarService),
-                        ),
-                      );
-                    },
+                  NavigationTileComponent(
+                    title: 'View Schools',
+                    icon: Icons.list,
+                    routeName: '/view-schools',
+                    arguments: isarService, // Will be passed to onGenerateRoute
                   ),
                 ],
               ),
@@ -223,52 +174,27 @@ class HomePage extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                children: [
-                  ListTile(
-                    leading: Icon(Icons.settings, color: colorScheme.primary),
-                    title: const Text('Settings'),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const SettingsPage()),
-                      );
-                    },
+                children: const [
+                  NavigationTileComponent(
+                    icon: Icons.settings,
+                    title: 'Settings',
+                    routeName: '/settings',
                   ),
-                  ListTile(
-                    leading: Icon(
-                      Icons.privacy_tip,
-                      color: colorScheme.primary,
-                    ),
-                    title: const Text('Privacy Policy'),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const PrivacyPage()),
-                      );
-                    },
+                  
+                  NavigationTileComponent(
+                    icon: Icons.privacy_tip,
+                    title: 'Privacy Policy',
+                    routeName: '/privacy',
                   ),
-                  ListTile(
-                    leading: Icon(Icons.info, color: colorScheme.primary),
-                    title: const Text('About Us'),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const AboutUsPage()),
-                      );
-                    },
+                  NavigationTileComponent(
+                    icon: Icons.info,
+                    title: 'About Us',
+                    routeName: '/about',
                   ),
-                  ListTile(
-                    leading: Icon(
-                      Icons.description,
-                      color: colorScheme.primary,
-                    ),
-                    title: const Text('Terms and Conditions'),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const TermsPage()),
-                      );
-                    },
+                  NavigationTileComponent(
+                    icon: Icons.description,
+                    title: 'Terms and Conditions',
+                    routeName: '/terms',
                   ),
                 ],
               ),
@@ -276,23 +202,9 @@ class HomePage extends StatelessWidget {
 
             // Contact info & footer
             SizedBox(height: 2.h),
-            Center(
-              child: Text(
-                contactInfo,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: colorScheme.secondary),
-                textAlign: TextAlign.center,
-              ),
-            ),
-            SizedBox(height: 1.h),
-            Center(
-              child: Text(
-                copyright,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurface.withOpacity(0.6),
-                ),
-              ),
+            FooterInfoComponent(
+              contactInfo: contactInfo,
+              copyright: copyright,
             ),
           ],
         ),

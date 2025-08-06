@@ -3,11 +3,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:myproject/components/appbar_component.dart';
+import 'package:myproject/components/debouncer_component.dart';
+import 'package:myproject/components/showConfirmationDialog.dart';
 import 'package:myproject/config.dart';
 import 'package:myproject/models/school.dart';
 import 'package:myproject/services/DB/isar_services.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
 import 'dart:async';
+
+import 'package:myproject/components/labeled_text_form_field_component.dart';
+
+
+class ClassInfo {
+  final TextEditingController sectionController;
+  final List<String> sections;
+
+  ClassInfo({TextEditingController? controller, List<String>? sections})
+    : sectionController = controller ?? TextEditingController(),
+      sections = sections ?? [];
+
+  void dispose() {
+    sectionController.dispose();
+  }
+}
 
 class AddSchoolScreen extends StatefulWidget {
   final IsarService isarService;
@@ -26,23 +44,23 @@ class AddSchoolScreen extends StatefulWidget {
 
 class _AddSchoolScreenState extends State<AddSchoolScreen> {
   final _formKey = GlobalKey<FormState>();
-Timer? _debounce;
-  int? _lastSearchedCode;
+
   final schoolNameController = TextEditingController();
   final schoolCodeController = TextEditingController();
   final schoolTypeController = TextEditingController();
   final principalNameController = TextEditingController();
   final phoneController = TextEditingController();
   final classController = TextEditingController();
-  final Map<String, TextEditingController> sectionControllers = {};
-  final List<String> classes = [];
-  final Map<String, List<String>> classSections = {};
-  String? selectedSchoolType;
-  String? lastSelectedSchoolType;
+
+  SchoolType? selectedSchoolType;
+  SchoolType? lastSelectedSchoolType;
   bool isExisting = false;
   bool isSaving = false;
 
-  final List<String> _schoolTypes = ['Govt', 'Private', 'Other'];
+
+  final DebouncerComponent<int> schoolCodeDebouncer = DebouncerComponent<int>();
+final Map<String, ClassInfo> classInfos = {};
+
 
   void _loadSchoolData(School school, bool enable) {
     config.logger.i("🟡 _loadSchoolData started | enable=$enable");
@@ -64,40 +82,32 @@ Timer? _debounce;
 """);
 
     lastSelectedSchoolType = selectedSchoolType ?? lastSelectedSchoolType;
-    config.logger.i("↩ lastSelectedSchoolType: '$lastSelectedSchoolType'");
 
+    // Set school type using enum helper
+    selectedSchoolType = SchoolTypeExtension.fromString(school.schoolType);
+    config.logger.i("✅ School type set: '$selectedSchoolType'");
 
-    // Normalize and validate school type
-    if (['Govt', 'Private', 'Other'].contains(school.schoolType)) {
-      selectedSchoolType = school.schoolType;
-      config.logger.i("✅ Valid school type: '$selectedSchoolType'");
-    } else if (school.schoolType == 'Government') {
-      selectedSchoolType = 'Govt';
-      config.logger.i("🔁 Normalized 'Government' ➜ 'Govt'");
-    } else {
-      selectedSchoolType = null;
-      config.logger.w("⚠ Unknown type '${school.schoolType}', setting to null");
+    // Clear existing classInfos and dispose controllers if needed
+    for (final info in classInfos.values) {
+      info.dispose();
     }
-
-    classes.clear();
-    classes.addAll(school.classes);
-    config.logger.i("📚 Loaded ${classes.length} classes: $classes");
-
-    classSections.clear();
-    sectionControllers.clear();
-    config.logger.d("🔄 Cleared previous classSections and controllers");
+    classInfos.clear();
+    config.logger.d("🔄 Cleared previous classInfos");
 
     for (final cs in school.classSections) {
-      classSections[cs.className] = List.from(cs.sections);
-      config.logger.i("➡ Class '${cs.className}' → Sections: ${cs.sections}");
+      final controller = enable
+          ? TextEditingController()
+          : TextEditingController(text: '');
+      classInfos[cs.className] = ClassInfo(
+        controller: controller,
+        sections: List.from(cs.sections),
+      );
 
+      config.logger.i("➡ Class '${cs.className}' → Sections: ${cs.sections}");
       if (enable) {
-        sectionControllers[cs.className] = TextEditingController();
         config.logger.d("🆕 Created controller for '${cs.className}'");
       } else {
-        config.logger.d(
-          "⏭ Skipped controller (enable=false) for '${cs.className}'",
-        );
+        config.logger.d("⏭ Skipped controller input (readonly mode)");
       }
     }
 
@@ -105,25 +115,18 @@ Timer? _debounce;
   }
 
   @override
- @override
   void initState() {
     super.initState();
     _loadSchoolIfEditing();
 
     schoolCodeController.addListener(() {
-      final text = schoolCodeController.text.trim();
-      final code = int.tryParse(text);
-      if (code != null && text.isNotEmpty) {
-        if (_lastSearchedCode == code) return; // Prevent same query repeat
-        _debounce?.cancel();
-        _debounce = Timer(const Duration(milliseconds: 500), () {
-          _lastSearchedCode = code;
-          _checkExistingSchool(code);
-        });
-      }
+      schoolCodeDebouncer.run(
+        text: schoolCodeController.text,
+        parser: int.tryParse,
+        onValidChange: _checkExistingSchool,
+      );
     });
   }
-
 
   Future<void> _loadSchoolIfEditing() async {
     if (widget.schoolCode != null) {
@@ -142,16 +145,18 @@ Timer? _debounce;
 
   @override
   void dispose() {
-    _debounce?.cancel();
     schoolNameController.dispose();
     schoolCodeController.dispose();
     schoolTypeController.dispose();
     principalNameController.dispose();
     phoneController.dispose();
     classController.dispose();
-    for (var controller in sectionControllers.values) {
-      controller.dispose();
+    // Dispose all ClassInfo instances
+    for (final info in classInfos.values) {
+      info.dispose(); // ✅ encapsulated disposal
     }
+
+    classInfos.clear();
     super.dispose();
   }
 
@@ -159,7 +164,8 @@ Timer? _debounce;
     FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
 
-    final confirmed = await _showConfirmationDialog(
+    final confirmed = await showConfirmationDialogComponent(
+      context: context,
       title: isExisting ? 'Update School' : 'Save School',
       message: isExisting
           ? 'Are you sure you want to update this school?'
@@ -178,17 +184,19 @@ Timer? _debounce;
 
       final existingSchool = await widget.isarService.getSchoolByCode(code);
 
+      final sortedClassNames = classInfos.keys.toList()..sort();
+
       final school = School()
         ..schoolName = schoolNameController.text.trim()
         ..schoolCode = code
-        ..schoolType = selectedSchoolType ?? ''
+        ..schoolType = selectedSchoolType?.label ?? ''
         ..principalName = principalNameController.text.trim()
         ..phone1 = phoneController.text.trim()
-        ..classes = List.from(classes..sort())
-        ..classSections = classSections.entries.map((e) {
+        ..classes = sortedClassNames
+        ..classSections = sortedClassNames.map((className) {
           return ClassSection()
-            ..className = e.key
-            ..sections = List.from(e.value);
+            ..className = className
+            ..sections = List.from(classInfos[className]?.sections ?? []);
         }).toList();
 
       if (existingSchool != null) {
@@ -197,11 +205,7 @@ Timer? _debounce;
 
       await widget.isarService.addOrUpdateSchool(school);
       Navigator.pop(context, school);
-      if (selectedSchoolType == null) {
-        _showSnackBar('⚠ Please select a school type.');
-        setState(() => isSaving = false);
-        return;
-      }
+
       _showSnackBar(
         existingSchool != null
             ? '✅ School details updated successfully.'
@@ -239,65 +243,78 @@ Timer? _debounce;
     }
   }
 
-  Future<void> _removeClass(String className) async {
-    final confirmed = await _showConfirmationDialog(
+Future<void> _removeClass(String className) async {
+    final confirmed = await showConfirmationDialogComponent(
+      context: context,
       title: 'Remove Class',
       message: 'Are you sure you want to remove class "$className"?',
     );
     if (confirmed) {
       setState(() {
-        classes.remove(className);
-        classSections.remove(className);
-        sectionControllers[className]?.dispose();
-        sectionControllers.remove(className);
+        classInfos[className]?.dispose(); // Dispose controller
+        classInfos.remove(className); // Remove from map
       });
     }
   }
 
-  Future<void> _removeSection(String className, String section) async {
-    final confirmed = await _showConfirmationDialog(
-      title: 'Remove Section',
-      message: 'Remove section "$section" from class "$className"?',
-    );
-    if (confirmed) {
-      setState(() => classSections[className]?.remove(section));
-    }
-  }
 
-  void _addClass() {
+  Future<void> _removeSection(String className, String section) async {
+  final confirmed = await showConfirmationDialogComponent(
+    context: context,
+    title: 'Remove Section',
+    message: 'Remove section "$section" from class "$className"?',
+  );
+  if (confirmed) {
+    setState(() {
+      classInfos[className]?.sections.remove(section);
+    });
+  }
+}
+
+
+void _addClass() {
     final className = classController.text.trim();
-    if (className.isNotEmpty &&
-        !classes.any((c) => c.toLowerCase() == className.toLowerCase())) {
+
+    if (className.isEmpty) return;
+
+    final exists = classInfos.keys.any(
+      (c) => c.toLowerCase() == className.toLowerCase(),
+    );
+
+    if (!exists) {
       setState(() {
-        classes.add(className);
-        classSections[className] = [];
-        sectionControllers[className] = TextEditingController();
+        classInfos[className] = ClassInfo();
         classController.clear();
       });
     }
   }
 
+
   void _addSection(String className) {
-    if (!classSections.containsKey(className)) {
+    final info = classInfos[className];
+
+    if (info == null) {
       _showSnackBar('⚠ Class "$className" does not exist.');
       return;
     }
-    final controller = sectionControllers[className];
-    if (controller == null) return;
 
-    final section = controller.text.trim().toUpperCase();
-    if (section.isNotEmpty &&
-        !(classSections[className] ?? []).any(
-          (s) => s.toLowerCase() == section.toLowerCase(),
-        )) {
+    final section = info.sectionController.text.trim().toUpperCase();
+
+    final alreadyExists = info.sections.any(
+      (s) => s.toLowerCase() == section.toLowerCase(),
+    );
+
+    if (section.isNotEmpty && !alreadyExists) {
       setState(() {
-        classSections[className]?.add(section);
-        controller.clear();
+        info.sections.add(section);
+        info.sectionController.clear();
       });
     }
   }
 
+
   void _clearAll() {
+    // Clear form fields
     schoolNameController.clear();
     schoolCodeController.clear();
     schoolTypeController.clear();
@@ -305,42 +322,25 @@ Timer? _debounce;
     phoneController.clear();
     classController.clear();
 
-    for (var controller in sectionControllers.values) {
-      controller.clear();
+    // Clear each section controller inside classInfos
+    for (final info in classInfos.values) {
+      info.sectionController.clear();
+      info.sections.clear();
     }
 
-    classes.clear();
-    classSections.clear();
+    // Or fully remove all classInfos and dispose their controllers
+    for (final info in classInfos.values) {
+      info.dispose(); // Clean disposal
+    }
+    classInfos.clear();
+
     selectedSchoolType = null;
     lastSelectedSchoolType = null;
   }
 
+
   void _showSnackBar(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
-  }
-
-  Future<bool> _showConfirmationDialog({
-    required String title,
-    required String message,
-  }) async {
-    return await showDialog<bool>(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: Text(title),
-            content: Text(message),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(false),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.of(ctx).pop(true),
-                child: const Text('Confirm'),
-              ),
-            ],
-          ),
-        ) ??
-        false;
   }
 
   InputDecoration _inputDecoration({
@@ -376,8 +376,9 @@ Timer? _debounce;
   );
 
   Widget _buildClassCard(String className) {
-    final controller = sectionControllers[className] ?? TextEditingController();
-    sectionControllers[className] = controller;
+    final info = classInfos[className];
+    if (info == null) return const SizedBox();
+
     return Card(
       margin: EdgeInsets.symmetric(vertical: 1.h),
       shadowColor: Colors.black54,
@@ -387,6 +388,7 @@ Timer? _debounce;
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            /// Header with Class name & delete button
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -399,32 +401,35 @@ Timer? _debounce;
                   onPressed: () => _removeClass(className),
                   icon: const Icon(Icons.delete, color: Colors.red),
                 ),
-                
               ],
             ),
-            const Row (
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'SECTIONS',
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-              ]
+
+            /// Section label
+            const Padding(
+              padding: EdgeInsets.only(top: 8.0, bottom: 4.0),
+              child: Text(
+                'SECTIONS',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
             ),
+
+            /// Chips for existing sections
             Wrap(
               spacing: 8,
-              children: (classSections[className] ?? []).map((s) {
+              children: info.sections.map((s) {
                 return Chip(
                   label: Text(s),
                   onDeleted: () => _removeSection(className, s),
                 );
               }).toList(),
             ),
+
+            /// Input for new section
             Row(
               children: [
                 Expanded(
                   child: TextFormField(
-                    controller: controller,
+                    controller: info.sectionController,
                     decoration: _inputDecoration(),
                   ),
                 ),
@@ -478,56 +483,51 @@ Timer? _debounce;
                       physics: const NeverScrollableScrollPhysics(),
                       children: [
                         SizedBox(height: 1.h),
-                        _buildLabel('Enter School Code'),
-                        TextFormField(
+                        LabeledTextFormFieldComponent(
+                          label: 'Enter School Code',
                           controller: schoolCodeController,
-                          decoration: _inputDecoration(
-                            suffixAction: _checkExistingSchool,
-                            suffixIcon: Icons.search,
-                            helperText:
-                                'Unique numeric identifier for the school.',
-                          ),
+                          helperText:
+                              'Unique numeric identifier for the school.',
                           keyboardType: TextInputType.number,
-                          validator: (v) => v!.trim().isEmpty
-                              ? 'Please enter the school code.'
-                              : int.tryParse(v.trim()) == null
-                              ? 'Code must be a number.'
-                              : null,
+                          suffixIcon: Icons.search,
+                          suffixAction: _checkExistingSchool,
+                          validator: (v) {
+                            final trimmed = v?.trim();
+                            if (trimmed == null || trimmed.isEmpty) {
+                              return 'Please enter the school code.';
+                            } else if (int.tryParse(trimmed) == null) {
+                              return 'Code must be a number.';
+                            }
+                            return null;
+                          },
                           onFieldSubmitted: (_) => _checkExistingSchool(),
                         ),
-                        _buildLabel('Enter School Name'),
-                        TextFormField(
+
+                        LabeledTextFormFieldComponent(
+                          label: 'Enter School Name',
                           controller: schoolNameController,
-                          decoration: _inputDecoration(
-                            helperText: 'Official name of the school.',
-                          ),
+                          helperText: 'Official name of the school.',
                           validator: (v) => v!.trim().isEmpty
                               ? 'Please enter the school name.'
                               : null,
                         ),
+
                         _buildLabel('Select School Type'),
                         Wrap(
                           spacing: 8.sp,
-                          children: _schoolTypes.map((type) {
+                          children: SchoolType.values.where((type) => type != SchoolType.all).map((type) {
                             final isSelected = selectedSchoolType == type;
-
-                            final icon = type == 'Govt'
-                                ? Icons.apartment
-                                : type == 'Private'
-                                ? Icons.school
-                                : Icons.help_outline;
-
                             return ChoiceChip(
                               label: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(
-                                    icon,
+                                    type.icon,
                                     size: 18,
                                     color: isSelected ? Colors.white : null,
                                   ),
                                   const SizedBox(width: 4),
-                                  Text(type),
+                                  Text(type.label),
                                 ],
                               ),
                               selected: isSelected,
@@ -561,22 +561,19 @@ Timer? _debounce;
                             ),
                           ),
 
-                        _buildLabel('Enter Principal Name'),
-                        TextFormField(
+                        LabeledTextFormFieldComponent(
+                          label: 'Enter Principal Name',
                           controller: principalNameController,
-                          decoration: _inputDecoration(
-                            helperText: 'Full name of the principal.',
-                          ),
+                          helperText: 'Full name of the principal.',
                           validator: (v) => v!.trim().isEmpty
                               ? 'Please enter the principal\'s name.'
                               : null,
                         ),
-                        _buildLabel('Enter Contact Number'),
-                        TextFormField(
+
+                        LabeledTextFormFieldComponent(
+                          label: 'Enter Contact Number',
                           controller: phoneController,
-                          decoration: _inputDecoration(
-                            helperText: 'Primary phone number for the school.',
-                          ),
+                          helperText: 'Primary phone number for the school.',
                           keyboardType: TextInputType.phone,
                           validator: (v) {
                             final trimmed = v!.trim();
@@ -602,10 +599,7 @@ Timer? _debounce;
                                 inputFormatters: [
                                   FilteringTextInputFormatter.digitsOnly,
                                 ],
-                                decoration: _inputDecoration(
-                                 
-                                  
-                                ),
+                                decoration: _inputDecoration(),
                               ),
                             ),
                             SizedBox(width: 8.w),
@@ -621,7 +615,7 @@ Timer? _debounce;
 
                         SizedBox(height: 2.h),
                         const Divider(),
-                        ...classes.map(_buildClassCard),
+                        ...classInfos.keys.map(_buildClassCard),
                         SizedBox(height: 2.h),
                         SizedBox(
                           width: double.infinity,

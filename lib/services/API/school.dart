@@ -15,7 +15,7 @@ class SchoolApiService {
     }
   }
 
-  Future<School> createSchool(School school) async {
+  Future<School> sync(School school) async {
     final response = await http.post(
       Uri.parse(baseUrl),
       headers: {'Content-Type': 'application/json'},
@@ -28,23 +28,5 @@ class SchoolApiService {
     }
   }
 
-  Future<School> updateSchool(int schoolCode, School school) async {
-    final response = await http.put(
-      Uri.parse('$baseUrl/$schoolCode'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(school.toJson()),
-    );
-    if (response.statusCode == 200) {
-      return School.fromJson(jsonDecode(response.body));
-    } else {
-      throw Exception('Failed to update school');
-    }
-  }
 
-  Future<void> deleteSchool(int schoolCode) async {
-    final response = await http.delete(Uri.parse('$baseUrl/$schoolCode'));
-    if (response.statusCode != 200) {
-      throw Exception('Failed to delete school');
-    }
-  }
 }

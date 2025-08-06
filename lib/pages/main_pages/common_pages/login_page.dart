@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:myproject/pages/main_pages/common_pages/forgot_password_page.dart';
 import 'package:myproject/pages/main_pages/common_pages/home_page.dart';
+import 'package:myproject/services/API/auth_api_service.dart';
 import 'package:myproject/services/DB/isar_services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
   final IsarService isarService;
@@ -34,34 +36,23 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
+
+      // final token = await AuthApiService.login(mobile, password);
+
+      //  if (token != null) {
+      //   final prefs = await SharedPreferences.getInstance();
+      //   await prefs.setString('auth_token', token);
+      //   // print('✅ Token saved to shared preferences.');
+      // } else {
+      //   print('⚠️ Token not found in response.');
+      // }
+
        Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => HomePage(isarService: widget.isarService,)),
       );
 
-      // final url = Uri.parse(
-      //   'https://your-api-url.com/login',
-      // ); // replace with your URL
-      // final response = await http.post(
-      //   url,
-      //   body: {'mobile': mobile, 'password': password},
-      // );
 
-      // final data = json.decode(response.body);
-      // if (response.statusCode == 200 && data['token'] != null) {
-      //   // save token
-      //   final prefs = await SharedPreferences.getInstance();
-      //   await prefs.setString('token', data['token']);
-      //   // navigate to HomePage
-      //   if (mounted) {
-      //     Navigator.pushReplacement(
-      //       context,
-      //       MaterialPageRoute(builder: (_) => const HomePage()),
-      //     );
-      //   }
-      // } else {
-      //   _showErrorDialog(data['error'] ?? 'Login failed');
-      // }
     } catch (e) {
       _showErrorDialog('Something went wrong. Please try again.');
     } finally {

@@ -3,7 +3,6 @@ import 'package:myproject/components/appbar_component.dart';
 import 'package:myproject/models/school.dart';
 import 'package:myproject/pages/main_pages/app_specific/school/add_school_screen.dart';
 import 'package:myproject/pages/main_pages/app_specific/student/HomePageStudent.dart';
-import 'package:myproject/pages/main_pages/app_specific/student/ViewStudentsPage.dart' hide HomePageAfterSection;
 import 'package:myproject/services/DB/isar_services.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
 
@@ -76,9 +75,9 @@ class _SchoolDetailScreenState extends State<SchoolDetailScreen> {
                       ),
                       _infoTile(Icons.phone, 'Phone', school!.phone1),
                       SizedBox(height: 3.h),
-                      Divider(
+                      const Divider(
                         thickness: 1.2,
-                        color: const Color.fromARGB(255, 46, 44, 44),
+                        color: Color.fromARGB(255, 46, 44, 44),
                       ),
                       SizedBox(height: 2.h),
                       _header("📚 Classes & Sections"),

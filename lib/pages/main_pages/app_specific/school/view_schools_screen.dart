@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:myproject/components/appbar_component.dart';
+import 'package:myproject/config.dart';
 import 'package:myproject/models/school.dart';
 import 'package:myproject/pages/main_pages/app_specific/school/add_school_screen.dart';
 import 'package:myproject/services/DB/isar_services.dart';
@@ -24,10 +25,9 @@ class _ViewSchoolsScreenState extends State<ViewSchoolsScreen> {
   String? _error;
 
   String _searchQuery = '';
-  String _selectedType = 'All';
+  SchoolType _selectedType = SchoolType.all;
   String _sortOption = 'Name';
 
-  final List<String> _schoolTypes = ['All', 'Govt', 'Private', 'Other'];
   final List<String> _sortOptions = ['Name', 'Code'];
 
   @override
@@ -54,7 +54,7 @@ class _ViewSchoolsScreenState extends State<ViewSchoolsScreen> {
 
   void _applyFilters() {
     List<School> filtered = _schools.where((s) {
-      final matchType = _selectedType == 'All' || s.schoolType == _selectedType;
+      final matchType = _selectedType == SchoolType.all || s.schoolType == _selectedType.label;
       final query = _searchQuery.toLowerCase();
       final matchQuery =
           s.schoolName.toLowerCase().contains(query) ||
@@ -217,13 +217,13 @@ class _ViewSchoolsScreenState extends State<ViewSchoolsScreen> {
                           // Chip filters
                           Wrap(
                             spacing: 8.sp,
-                            children: _schoolTypes.map((type) {
+                            children: SchoolType.values.map((type) {
                               final isSelected = _selectedType == type;
-                              final icon = type == 'Govt'
+                              final icon = type == SchoolType.govt
                                   ? Icons.apartment
-                                  : type == 'Private'
+                                  : type == SchoolType.private
                                       ? Icons.school
-                                      : type == 'Other'
+                                      : type == SchoolType.other
                                           ? Icons.help_outline
                                           : Icons.list;
 
@@ -237,7 +237,7 @@ class _ViewSchoolsScreenState extends State<ViewSchoolsScreen> {
                                       color: isSelected ? Colors.white : null,
                                     ),
                                     const SizedBox(width: 4),
-                                    Text(type),
+                                    Text(type.label),
                                   ],
                                 ),
                                 selected: isSelected,
@@ -400,7 +400,7 @@ class _ViewSchoolsScreenState extends State<ViewSchoolsScreen> {
                           icon: const Icon(Icons.edit),
                           label: const Text("Update"),
                           style: ElevatedButton.styleFrom(
-                            minimumSize: Size(double.infinity, 45),
+                            minimumSize: const Size(double.infinity, 45),
                           ),
                         ),
                       ),

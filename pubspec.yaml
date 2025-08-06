@@ -21,13 +21,7 @@ version: 1.0.0+4
 environment:
   sdk: ^3.8.1
 
-isar_version: &isar_version 3.1.8 # define the version to be used
-# Dependencies specify other packages that your package needs in order to work.
-# To automatically upgrade your package dependencies to the latest versions
-# consider running `flutter pub upgrade --major-versions`. Alternatively,
-# dependencies can be manually updated by changing the version numbers below to
-# the latest version available on pub.dev. To see which dependencies have newer
-# versions available, run `flutter pub outdated`.
+#isar_version: &isar_version 3.1.8 
 dependencies:
   flutter:
     sdk: flutter
@@ -39,10 +33,10 @@ dependencies:
   shared_preferences: ^2.5.3
   path_provider: ^2.1.5
   isar: 
-    version: *isar_version
+    version: 3.1.8 
     hosted: https://pub.isar-community.dev/
   isar_flutter_libs: # contains Isar Core
-    version: *isar_version
+    version: 3.1.8 
     hosted: https://pub.isar-community.dev/
 
   intl: ^0.20.2
@@ -54,13 +48,14 @@ dependencies:
   package_info_plus: ^8.3.0
   path: ^1.9.1
   archive: ^4.0.7
+  enum_to_string: ^2.2.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
   isar_generator: 
-    version: *isar_version
+    version: 3.1.8 
     hosted: https://pub.isar-community.dev/
   build_runner: any
 

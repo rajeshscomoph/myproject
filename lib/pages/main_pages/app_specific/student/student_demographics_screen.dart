@@ -1,6 +1,10 @@
+import 'package:enum_to_string/camel_case_to_words.dart';
 import 'package:flutter/material.dart';
 import 'package:myproject/components/appbar_component.dart';
+import 'package:myproject/components/choice_chip_field_component.dart';
 import 'package:myproject/components/school_info_card.dart';
+import 'package:myproject/config.dart';
+import 'package:myproject/models/school.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
 import 'package:myproject/models/student.dart';
 import 'package:myproject/services/DB/isar_services.dart';
@@ -9,7 +13,7 @@ import 'package:myproject/pages/main_pages/app_specific/student/student_screenin
 class StudentDemographicScreen extends StatefulWidget {
   final String className;
   final String section;
-  final dynamic school;
+  final School school;
   final IsarService isarService;
   final Student? existingStudent;
 
@@ -33,14 +37,13 @@ class _StudentDemographicScreenState extends State<StudentDemographicScreen> {
   final enrollNoController = TextEditingController();
   final rollNumberController = TextEditingController();
   String? selectedGender;
-  String? selectedExamination;
+  ExaminationStatus? selectedExamination;
   DateTime? dob;
   bool showGenderError = false;
   bool showExamError = false;
   bool showDobError = false;
 
   final List<String> _genders = ['Male', 'Female', 'Other'];
-  final List<String> _examinations = ['Examined', 'Absent', 'Refused'];
 
   @override
   void initState() {
@@ -52,7 +55,7 @@ class _StudentDemographicScreenState extends State<StudentDemographicScreen> {
       rollNumberController.text = s.rollNumber.toString();
       selectedGender = s.gender;
       dob = s.dob;
-      selectedExamination = s.examination;
+      selectedExamination = ExaminationStatusExtension.fromString( s.examination);
     }
   }
 
@@ -94,10 +97,12 @@ class _StudentDemographicScreenState extends State<StudentDemographicScreen> {
       ..rollNumber = int.tryParse(rollNumberController.text.trim()) ?? 0
       ..gender = selectedGender!
       ..dob = dob!
-      ..examination = selectedExamination!
+      ..examination = selectedExamination!.label
       ..school.value = widget.school
       ..className = widget.className
-      ..section = widget.section;
+      ..section = widget.section
+      ..schoolCode = '${widget.school.schoolCode}'
+      ;
 
     await widget.isarService.addOrUpdateStudent(student);
     return student;
@@ -113,40 +118,6 @@ class _StudentDemographicScreenState extends State<StudentDemographicScreen> {
     if (picked != null) {
       setState(() => dob = picked);
     }
-  }
-
-  Widget _buildChoiceChipField({
-    required String label,
-    required List<String> options,
-    required String? selected,
-    required void Function(String) onSelected,
-  }) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: 1.h),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17.sp),
-          ),
-          SizedBox(height: 0.5.h),
-          Wrap(
-            spacing: 8.sp,
-            children: options.map((option) {
-              final isSelected = selected == option;
-              return ChoiceChip(
-                label: Text(option),
-                selected: isSelected,
-                onSelected: (_) => setState(() => onSelected(option)),
-                selectedColor: Theme.of(context).colorScheme.primary,
-                labelStyle: TextStyle(color: isSelected ? Colors.white : null),
-              );
-            }).toList(),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
@@ -184,7 +155,7 @@ class _StudentDemographicScreenState extends State<StudentDemographicScreen> {
                 validator: (value) =>
                     value!.isEmpty ? 'Please enter roll number' : null,
               ),
-              _buildChoiceChipField(
+              ChoiceChipFieldComponent<String>(
                 label: 'Gender',
                 options: _genders,
                 selected: selectedGender,
@@ -194,6 +165,7 @@ class _StudentDemographicScreenState extends State<StudentDemographicScreen> {
                     showGenderError = false;
                   });
                 },
+                labelBuilder: (val) => val,
               ),
               if (showGenderError)
                 const Text(
@@ -224,16 +196,16 @@ class _StudentDemographicScreenState extends State<StudentDemographicScreen> {
                   ),
                 ),
               SizedBox(height: 1.h),
-              _buildChoiceChipField(
+              ChoiceChipFieldComponent<ExaminationStatus>(
                 label: 'Examination',
-                options: _examinations,
+                options: ExaminationStatus.values,
                 selected: selectedExamination,
                 onSelected: (val) {
                   setState(() {
                     selectedExamination = val;
                     showExamError = false;
                   });
-                },
+                }, labelBuilder: (val) => val.label,
               ),
               if (showExamError)
                 const Text(
@@ -242,7 +214,7 @@ class _StudentDemographicScreenState extends State<StudentDemographicScreen> {
                 ),
 
               /// 👉 Proceed to Screening
-              if (selectedExamination?.toLowerCase() == 'examined')
+              if (selectedExamination == ExaminationStatus.examined)
                 Padding(
                   padding: EdgeInsets.only(top: 2.h),
                   child: ElevatedButton.icon(

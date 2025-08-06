@@ -110,19 +110,19 @@ class AppTheme {
           color: Colors.white60,
         ),
       ),
-      appBarTheme: AppBarTheme(
+      appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.rawUmber,
         foregroundColor: Colors.white,
         elevation: 2,
         centerTitle: true,
-        iconTheme: const IconThemeData(color: Colors.white),
-        titleTextStyle: const TextStyle(
+        iconTheme: IconThemeData(color: Colors.white),
+        titleTextStyle: TextStyle(
           fontSize: 20,
           fontWeight: FontWeight.bold,
           color: Colors.white,
         ),
       ),
-      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: AppColors.night,
         selectedItemColor: AppColors.rawUmber,
         unselectedItemColor: Colors.white54,
@@ -237,7 +237,7 @@ class AppTheme {
         fillColor: colorScheme.surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: AppColors.chamoisee),
+          borderSide: const BorderSide(color: AppColors.chamoisee),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
@@ -247,7 +247,7 @@ class AppTheme {
         hintStyle: TextStyle(color: colorScheme.onSurface.withOpacity(0.5)),
       ),
 
-      dividerTheme: DividerThemeData(color: AppColors.chamoisee, thickness: 1),
+      dividerTheme: const DividerThemeData(color: AppColors.chamoisee, thickness: 1),
 
       snackBarTheme: SnackBarThemeData(
         backgroundColor: colorScheme.primary,

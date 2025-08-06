@@ -56,7 +56,7 @@ class _StudentScreeningScreenState extends State<StudentScreeningScreen> {
     cutoffUVA2 = s.cutoffUVA2;
     eyeTest = s.eyeTest;
     referred = s.referred;
-    phoneController.text = s.phone;
+    phoneController.text = s.phone ?? '';
   }
 
   Future<void> _saveStudent() async {

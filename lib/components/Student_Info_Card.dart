@@ -2,15 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
 import 'package:myproject/models/student.dart';
 
-class StudentInfoCard extends StatelessWidget {
+class StudentInfoCard extends StatefulWidget {
   final Student student;
+  final void Function(String newExamination)? onExaminationChanged;
 
-  const StudentInfoCard({super.key, required this.student});
+  const StudentInfoCard({
+    super.key,
+    required this.student,
+    this.onExaminationChanged,
+  });
+
+  @override
+  State<StudentInfoCard> createState() => _StudentInfoCardState();
+}
+
+class _StudentInfoCardState extends State<StudentInfoCard> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Card(
       elevation: 3,
       margin: EdgeInsets.symmetric(vertical: 1.h, horizontal: 2.w),
@@ -20,23 +29,19 @@ class StudentInfoCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _infoTile(Icons.person_outline, 'Name', student.name),
+            _infoTile(Icons.person_outline, 'Name', widget.student.name),
             _infoTile(
               Icons.confirmation_number,
               'Enrollment No.',
-              student.enrollNo,
+              widget.student.enrollNo,
             ),
             _infoTile(
               Icons.format_list_numbered,
               'Roll No.',
-              student.rollNumber.toString(),
+              widget.student.rollNumber.toString(),
             ),
-            _infoTile(Icons.wc, 'Gender', student.gender),
-             _infoTile(
-              Icons.assignment_turned_in,
-              'Examination',
-              student.examination,
-            ),
+            _infoTile(Icons.wc, 'Gender', widget.student.gender),
+            _infoTile(Icons.wc, 'Examination Status', widget.student.examination)
           ],
         ),
       ),
@@ -68,9 +73,5 @@ class StudentInfoCard extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  String _formatDate(DateTime date) {
-    return '${date.day.toString().padLeft(2, '0')}-${date.month.toString().padLeft(2, '0')}-${date.year}';
   }
 }
